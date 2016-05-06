@@ -5,7 +5,11 @@ import env from './env.js';
 // TODO URL from env vars
 
 const botConfig = env.isDevelopment() ? {polling: true} : {
-  polling: true
+  polling: false,
+  webHook: {
+    port: 80, // process.env.PORT
+    host: 'http://testbotserver.herokuapp.com' // sign cert to have https
+  }
 };
 
 const bot = new TelegramBot(token, botConfig); // TODO heroku non-polling
