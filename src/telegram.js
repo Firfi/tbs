@@ -6,9 +6,9 @@ import env from './env.js';
 
 const botConfig = env.isDevelopment() ? {polling: true} : {
   polling: false,
-  webHook: {
+  webHook: { // TODO NO webhook, NO polling as webhook conflicts with any type of server as it does http.listen itself
     port: process.env.PORT,
-    host: '0.0.0.0' // sign cert to have https 
+    host: '0.0.0.0' // sign cert to have https
   }
 };
 
