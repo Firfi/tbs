@@ -1,7 +1,7 @@
 const env = process.env.NODE_ENV;
 
 export default {
-  isDevelpment() {
+  isDevelopment() {
     return !env || env === 'development';
   },
   isProduction() {
