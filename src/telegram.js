@@ -7,8 +7,8 @@ import env from './env.js';
 const botConfig = env.isDevelopment() ? {polling: true} : {
   polling: false,
   webHook: {
-    port: 80, // process.env.PORT
-    host: 'testbotserver.herokuapp.com' // sign cert to have https
+    port: process.env.PORT,
+    host: '0.0.0.0' // sign cert to have https 
   }
 };
 
