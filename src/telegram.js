@@ -14,7 +14,7 @@ const botConfig = (env.isDevelopment()) ? {polling: true} : { // turn it on for 
 
 const bot = new TelegramBot(token, botConfig);
 
-bot.setWebHook('https://testbotserver.herokuapp.com'); // TODO HTTPS is necessary
+bot.setWebHook(`https://testbotserver.herokuapp.com/${token}`); // TODO HTTPS is necessary
 
 export default {
   onMessage(cb) { // TODO steam, no cb
