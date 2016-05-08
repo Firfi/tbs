@@ -4,7 +4,7 @@ import env from './env.js';
 
 // TODO URL from env vars
 
-const botConfig = (env.isDevelopment() || true) ? {polling: true} : { // turn it on for everything until HTTPS issue resolved
+const botConfig = (env.isDevelopment()) ? {polling: true} : { // turn it on for everything until HTTPS is
   polling: false,
   webHook: { // TODO NO webhook, NO polling as webhook conflicts with any type of server as it does http.listen itself
     port: process.env.PORT,
@@ -14,7 +14,7 @@ const botConfig = (env.isDevelopment() || true) ? {polling: true} : { // turn it
 
 const bot = new TelegramBot(token, botConfig);
 
-// bot.setWebHook('https://testbotserver.herokuapp.com'); // TODO HTTPS is necessary
+bot.setWebHook('https://testbotserver.herokuapp.com'); // TODO HTTPS is necessary
 
 export default {
   onMessage(cb) { // TODO steam, no cb
