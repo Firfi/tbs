@@ -13,15 +13,19 @@ let telegramQuizState = {
 // method for formatting reply keyboard to square-like structure
 const makeSquare = a => chunk(a, Math.ceil(Math.sqrt(a.length)));
 
+// message is group message
+const isGroup = msg => msg.from.id !== msg.chat.id;
+
 const sendQuestion = (chatId, q) => {
   const { answers } = q.question;
   const { id: qid } = q;
   return telegram.sendMessage(chatId, `${q.question.text}: \n
   ${answers.map((a, i) => `/${i}: ${a.text}`).join('\n')}`, {
     reply_markup: {
-      keyboard: makeSquare(answers.map((a, i) => `${qid}: /${i}`)),
-      hide_keyboard: true,
-      one_time_keyboard: true // todo
+      keyboard: makeSquare(answers.map((a, i) => `/${i}`)),
+      force_reply: true
+      //hide_keyboard: true,
+      //one_time_keyboard: true // todo
       // selective: true // Targets: 1) users that are @mentioned in the text of the Message object; 2) if the bot's message is a reply (has reply_to_message_id) not actualy if several users
     }
   })
@@ -54,33 +58,35 @@ telegram.onText(/^\/start/, msg => { // TODO CHECK IF RUNNING
   // init quiz, return first question
 });
 
-telegram.onText(/^(\d+): \/(\d+)/, (msg, match) => {
-  const questionId = Number(match[1]);
-
-  // TODO reply to case code here
-  //const replyTo = msg.reply_to_message;
-  //if (!replyTo) return console.warn('got answer without reply to'); // TODO error for user?
-  //const replyToId = replyTo.message_id; // always here
-
+telegram.onText(/\/(\d+)/, (msg, match) => {
   const chatId = msg.chat.id;
 
-  //const quizState = telegramQuizState[chatId];
-  //if (!quizState) return console.error(`no quiz state for chat ${chatId}`, telegramQuizState);
-  //const questionId = quizState.idMapping[replyToId];
-  //if (questionId === undefined) return console.warn(`no saved real question id for answer ${replyToId}`); // TODO error for user?
+  const quiz = Quiz.getQuiz(chatId);
+  if (!quiz) return console.warn('got answer but no quiz initialised.'); // TODO error for user?
+
+  let questionId = undefined;
+
+  if (isGroup(msg)) { // additional checks for reply_to_message
+    const replyTo = msg.reply_to_message;
+    if (!replyTo) return console.warn('got answer without reply to'); // TODO error for user?
+    const replyToId = replyTo.message_id; // always here
+    const quizState = telegramQuizState[chatId];
+    if (!quizState) return console.error(`no quiz state for chat ${chatId}`, telegramQuizState);
+    questionId = quizState.idMapping[replyToId];
+    if (questionId === undefined) return console.warn(`no saved real question id for answer ${replyToId}`); // TODO error for user?
+  } else {
+    questionId = quiz.currentQuestion().id
+  }
 
   const fromId = msg.from.id;
-  const answerId = Number(match[2]);
-  const quiz = Quiz.getQuiz(chatId);
-  if (quiz) {
-    quiz.giveAnswer(fromId/*TODO if user who is not in quiz answered*/, questionId, answerId)
-      .then(({ nextQuestion, givenAnswer, correctAnswer }) => {
-        return sendQuestionStat(chatId, givenAnswer, correctAnswer).then(() => nextQuestion ?
-          sendQuestion(chatId, nextQuestion) : sendSuccess(chatId, quiz));
-      })
-  } else {
-    console.warn('got answer but no quiz initialised.'); // TODO if no quiz
-  }
+  const answerId = Number(match[1]);
+
+  quiz.giveAnswer(fromId/*TODO if user who is not in quiz answered*/, questionId, answerId)
+    .then(({ nextQuestion, givenAnswer, correctAnswer }) => {
+      return sendQuestionStat(chatId, givenAnswer, correctAnswer).then(() => nextQuestion ?
+        sendQuestion(chatId, nextQuestion) : sendSuccess(chatId, quiz));
+    })
+
 });
 
 // just for testing Eliza without telegram involved
