@@ -34,7 +34,9 @@
     "babel-runtime": "^6.6.1",
     "eliza": "0.0.1-2",
     "hapi": "^13.3.0",
-    "node-telegram-bot-api": "^0.21.1"
+    "lodash": "^4.12.0",
+    "node-telegram-bot-api": "^0.21.1",
+    "ramda": "^0.21.0"
   },
   "devDependencies": {
     "babel-cli": "^6.8.0",

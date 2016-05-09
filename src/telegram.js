@@ -4,6 +4,8 @@ import env from './env.js';
 
 // TODO URL from env vars
 
+console.warn('env.isDevelopment()', env.isDevelopment(), 'token', token);
+
 const botConfig = (env.isDevelopment()) ? {polling: true} : { // turn it on for everything until HTTPS is
   polling: false,
   webHook: { // TODO NO webhook, NO polling as webhook conflicts with any type of server as it does http.listen itself
@@ -13,18 +15,13 @@ const botConfig = (env.isDevelopment()) ? {polling: true} : { // turn it on for 
 };
 
 const bot = new TelegramBot(token, botConfig);
-
-bot.setWebHook(`https://testbotserver.herokuapp.com/${token}`); // TODO HTTPS is necessary
-
-export default {
-  onMessage(cb) { // TODO steam, no cb
-    bot.on('message', msg => {
-      const chatId = msg.chat.id;
-      const resp = cb(msg); // TODO promises?
-      bot.sendMessage(chatId, resp);
-    });
-  }
+if (botConfig.webHook) {
+  bot.setWebHook('').then(() => {
+    bot.setWebHook(`https://testbotserver.herokuapp.com/${token}`);
+  });
 }
+
+export default bot;
 
 // Matches /echo [whatever]
 //bot.onText(/\/echo (.+)/, function (msg, match) {

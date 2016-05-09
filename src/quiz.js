@@ -1,3 +1,8 @@
+const R = require('ramda');
+const Promise = require('bluebird');
+
+let quizzes = [];
+
 class Answer {
   constructor(text) {
     this.text = text;
@@ -54,22 +59,41 @@ class Quiz {
     if (!question) console.error("we shouldn't ask questions where there's nothing left. Handle quiz wrap-up elsewhere.");
     return {
       question,
+      id: step,
       left: this.answers.length - step
     }
   }
   giveAnswer(uid, qid, aid) { // qid/aid could be indexes now
-    this.answers.push({
-      uid, qid, aid
+    const current = this.step();
+    const currentQuestion = this.currentQuestion();
+    return current !== qid ? Promise.reject({message: `got answer on wrong question. Question answered: ${qid},
+    current question: ${current}`}) : new Promise((success, fail) => {
+      const givenAnswer = currentQuestion.question.answers[aid];
+      if (!givenAnswer) {
+        return fail({message: `got answer for correct question, but answer id is wrong. Question: ${qid}, answer: ${aid}`});
+      } else {
+        this.answers.push({
+          uid, qid, aid
+        });
+        const next = this.quiz.questions[this.step()];
+        return success({
+          nextQuestion: next ? this.currentQuestion() : null,
+          givenAnswer,
+          correctAnswer: R.find(R.propEq('isCorrect', true))(currentQuestion.question.answers)
+        });
+      }
+
     });
-    const next = this.quiz.questions[this.step()];
-    return {
-      nextQuestion: next ? this.currentQuestion() : null
-    };
   }
 }
 
 export default {
   initQuiz(cid, uid) {
-    return new Quiz(cid, uid);
+    const quiz = new Quiz(cid, uid);
+    quizzes[cid] = quiz;
+    return quiz;
+  },
+  getQuiz(cid) {
+    return quizzes[cid];
   }
 };
