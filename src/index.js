@@ -20,8 +20,8 @@ const sendQuestion = (chatId, q) => {
   ${answers.map((a, i) => `/${i}: ${a.text}`).join('\n')}`, {
     reply_markup: {
       keyboard: makeSquare(answers.map((a, i) => `${qid}: /${i}`)),
-      hide_keyboard: true
-      // one_time_keyboard: true // todo
+      hide_keyboard: true,
+      one_time_keyboard: true // todo
       // selective: true // Targets: 1) users that are @mentioned in the text of the Message object; 2) if the bot's message is a reply (has reply_to_message_id) not actualy if several users
     }
   })
