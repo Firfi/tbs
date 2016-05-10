@@ -1,13 +1,14 @@
 import { bot as telegram } from './telegram.js';
-import Quiz from './quiz.js';
+import Quiz, { noAnswer } from './quiz.js';
 const chunk = require('lodash/chunk');
+const isUndefined = require('lodash/isUndefined');
 
 export default
 class TelegramQuiz {
   constructor() {
     // telegram-quiz related mappings
     let telegramQuizState = {
-      // {chat id: {telegram message id: 'question id', running: boolean, currentQuestion}}
+      // {chat id: {telegram message id: 'question id', running: boolean, currentQuestion, expirationTimeout}}
     };
 
 // method for formatting reply keyboard to square-like structure
@@ -17,7 +18,7 @@ class TelegramQuiz {
     const isGroup = msg => msg.from.id !== msg.chat.id;
 
     const sendQuestion = (chatId, q) => {
-      const { answers } = q.question;
+      const { answers, time=0 } = q.question;
       const { id: qid } = q;
       return telegram.sendMessage(chatId, `${q.question.text}: \n
         ${answers.map((a, i) => `/${i}: ${a.text}`).join('\n')}`, {
@@ -32,19 +33,42 @@ class TelegramQuiz {
       .then(sentMessage => {
         const mid = sentMessage.message_id;
         telegramQuizState[chatId].idMapping[mid] = q.id;
+        if (time) { // set question expire timeout
+          telegramQuizState[chatId].expirationTimeout = setTimeout(() => {
+            delete telegramQuizState[chatId].expirationTimeout;
+            giveAnswer(chatId, undefined, qid, undefined);
+          }, time);
+        }
         return sentMessage;
       });
     };
 
+    const giveAnswer = (chatId, fromId, questionId, answerId, quiz=Quiz.getQuiz(chatId)) => {
+      return quiz.giveAnswer(fromId/*TODO if user who is not in quiz answered*/, questionId, answerId)
+        .then(({ nextQuestion, givenAnswer, correctAnswer }) => {
+          return clearQuestionExpirationTimeout(chatId)
+            .then(() => sendQuestionStat(chatId, givenAnswer, correctAnswer))
+            .then(() => nextQuestion ?
+              sendQuestion(chatId, nextQuestion) : sendSuccess(chatId, quiz));
+        })
+    };
+
+    const clearQuestionExpirationTimeout = (chatId) => {
+      return new Promise(success => {
+        clearTimeout(telegramQuizState[chatId].expirationTimeout);
+        return success();
+      });
+    };
+
     const sendQuestionStat = (chatId, givenAnswer, correctAnswer) => {
-      return telegram.sendMessage(chatId, correctAnswer !== givenAnswer ?
+      return telegram.sendMessage(chatId, givenAnswer === noAnswer ? 'No answer given!' : (correctAnswer !== givenAnswer) ?
         `Given answer: ${givenAnswer.text}; correct answer: ${correctAnswer.text}` :
         `Correct!`);
     };
 
     const sendSuccess = (chatId, quiz) => {
       const answerLog = quiz.answers;
-      const correct = answerLog.filter(({qid, aid}) => quiz.quiz.questions[qid].answers[aid].isCorrect).length;
+      const correct = answerLog.filter(({qid, aid}) => !isUndefined(aid)/*noAnswer*/ && quiz.quiz.questions[qid].answers[aid].isCorrect).length;
       return telegram.sendMessage(chatId, `End. Correct answers: ${correct}/${answerLog.length}`);
     };
 
@@ -84,11 +108,7 @@ class TelegramQuiz {
       const fromId = msg.from.id;
       const answerId = Number(match[1]);
 
-      quiz.giveAnswer(fromId/*TODO if user who is not in quiz answered*/, questionId, answerId)
-        .then(({ nextQuestion, givenAnswer, correctAnswer }) => {
-          return sendQuestionStat(chatId, givenAnswer, correctAnswer).then(() => nextQuestion ?
-            sendQuestion(chatId, nextQuestion) : sendSuccess(chatId, quiz));
-        })
+      giveAnswer(chatId, fromId, questionId, answerId, quiz);
 
     });
   }

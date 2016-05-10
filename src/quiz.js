@@ -23,6 +23,15 @@ class IncorrectAnswer extends Answer {
   }
 }
 
+class NoAnswer extends IncorrectAnswer {
+  constructor() {
+    super();
+    this.isNoAnswer = true;
+  }
+}
+
+export const noAnswer = new NoAnswer();
+
 const CA = text => new CorrectAnswer(text);
 const IA = text => new IncorrectAnswer(text);
 
@@ -40,7 +49,7 @@ const sampleQuiz = {
       text: 'Who did David Tennant regenerate into?',
       answers: [CA('Matt Smith'), IA('Colin baker'), IA('Jon Pertwee')]
     }
-  ]
+  ].map(q => ({...q, time: 0}))
 }; // TODO in db
 
 class Quiz {
@@ -68,7 +77,7 @@ class Quiz {
     const currentQuestion = this.currentQuestion();
     return current !== qid ? Promise.reject({message: `got answer on wrong question. Question answered: ${qid},
     current question: ${current}`}) : new Promise((success, fail) => {
-      const givenAnswer = currentQuestion.question.answers[aid];
+      const givenAnswer = aid !== undefined ? currentQuestion.question.answers[aid] : noAnswer;
       if (!givenAnswer) {
         return fail({message: `got answer for correct question, but answer id is wrong. Question: ${qid}, answer: ${aid}`});
       } else {
@@ -78,7 +87,7 @@ class Quiz {
         const next = this.quiz.questions[this.step()];
         return success({
           nextQuestion: next ? this.currentQuestion() : null,
-          givenAnswer,
+          givenAnswer, // answer or false
           correctAnswer: R.find(R.propEq('isCorrect', true))(currentQuestion.question.answers)
         });
       }
