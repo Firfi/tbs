@@ -49,7 +49,7 @@ const sampleQuiz = {
       text: 'Who did David Tennant regenerate into?',
       answers: [CA('Matt Smith'), IA('Colin baker'), IA('Jon Pertwee')]
     }
-  ].map(q => ({...q, time: 0}))
+  ].map(q => ({...q, time: 5000}))
 }; // TODO in db
 
 class Quiz {
