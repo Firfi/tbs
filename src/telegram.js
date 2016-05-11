@@ -12,7 +12,7 @@ const webHookPath = `testbotserver.herokuapp.com/${token}`;
 export const isPolling = true || !botConfig.webHook;
 
 if (!isPolling) {
-  bot.setWebHook('').then(() => {
+  bot.removeWebHook().then(() => {
     bot.setWebHook(`https://${webHookPath}`);
   });
 } else {
