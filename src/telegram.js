@@ -16,7 +16,9 @@ if (!isPolling) {
     bot.setWebHook(`https://${webHookPath}`);
   });
 } else {
-  bot.startPolling();
+  bot.removeWebHook().then(() => {
+    bot.startPolling();
+  });
 }
 
 export const webHookCallback = bot.webHookCallback(`/${webHookPath}`);
