@@ -3,14 +3,14 @@ const R = require('ramda');
 const uniqueId = require('lodash/uniqueId');
 
 let store = [
-  {
-    type: 'voice',
-    voice: {file_id: 'AwADAgADBAADxMsBB9ykt95_wj6WAg'},
-    fromId: 117558212,
-    id: 'bbb1',
-    rated: false,
-    rates: []
-  }
+  //{
+  //  type: 'voice',
+  //  voice: {file_id: 'AwADAgADBAADxMsBB9ykt95_wj6WAg'},
+  //  fromId: 117558212,
+  //  id: 'bbb1',
+  //  rated: false,
+  //  rates: []
+  //}
 ];
 
 const findUnrated = R.find(R.propEq('rated', false));
