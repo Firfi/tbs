@@ -1,5 +1,5 @@
-import { bot as telegram } from './telegram.js';
-import Quiz, { noAnswer } from './quiz.js';
+import { bot as telegram } from '../telegram.js';
+import Quiz, { noAnswer } from '../quiz.js';
 const chunk = require('lodash/chunk');
 const isUndefined = require('lodash/isUndefined');
 
