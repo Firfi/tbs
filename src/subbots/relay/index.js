@@ -1,4 +1,4 @@
-import { join as joinMetaGroup, groupsFor, get as getGroup } from '../../metaGroup.js';
+import { join as joinMetaGroup, groupsFor, get as getGroup } from '../../metagroup.js';
 import { bot as telegram } from '../../telegram.js';
 
 export default
