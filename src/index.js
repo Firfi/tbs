@@ -3,6 +3,7 @@ import eliza from './elizaParse.js';
 import { webHookCallback as telegramWebHookCallback, isPolling } from './telegram.js';
 import TelegramQuiz from './subbots/telegramQuiz.js';
 import PeerRating from './subbots/peerRating/index.js';
+import RelayBot from './subbots/relay/index.js';
 const Promise = require('bluebird');
 const http = require('http');
 
@@ -13,4 +14,5 @@ if (!isPolling) {
 }
 
 // new TelegramQuiz(); // disabling it as a subbot
-new PeerRating();
+// new PeerRating();
+new RelayBot();

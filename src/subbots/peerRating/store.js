@@ -24,7 +24,6 @@ export const RATES = R.range(MIN_RATE, MAX_RATE + 1);
 export const addRecord = (r) => {
   return new Promise(success => {
     store.push({...r, rated: false, id: uniqueId(), rates: []}); // TODO who rated?
-    console.warn(store);
     success();
   });
 };
