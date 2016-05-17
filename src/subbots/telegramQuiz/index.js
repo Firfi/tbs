@@ -1,11 +1,15 @@
-import { bot as telegram } from '../telegram.js';
-import Quiz, { noAnswer } from '../quiz.js';
+import Route from '../router.js';
+import Quiz, { noAnswer } from '../../quiz.js';
 const chunk = require('lodash/chunk');
 const isUndefined = require('lodash/isUndefined');
 
 export default
 class TelegramQuiz {
+  welcome() {
+    return 'welcome to TelegramQuiz bot. type /start and do quiz.';
+  }
   constructor() {
+    const telegram = new Route('quiz', this);
     // telegram-quiz related mappings
     let telegramQuizState = {
       // {chat id: {telegram message id: 'question id', running: boolean, currentQuestion, expirationTimeout}}
@@ -31,14 +35,19 @@ class TelegramQuiz {
         }
       })
       .then(sentMessage => {
-        const mid = sentMessage.message_id;
-        telegramQuizState[chatId].idMapping[mid] = q.id;
-        if (time) { // set question expire timeout
-          telegramQuizState[chatId].expirationTimeout = setTimeout(() => {
-            delete telegramQuizState[chatId].expirationTimeout;
-            giveAnswer(chatId, undefined, qid, undefined);
-          }, time);
+        if (sentMessage) {
+          const mid = sentMessage.message_id;
+          telegramQuizState[chatId].idMapping[mid] = q.id;
+          if (time) { // set question expire timeout
+            telegramQuizState[chatId].expirationTimeout = setTimeout(() => {
+              delete telegramQuizState[chatId].expirationTimeout;
+              giveAnswer(chatId, undefined, qid, undefined);
+            }, time);
+          }
+        } else {
+          delete telegramQuizState[chatId]; // bot switched to another. TODO generic destructor
         }
+
         return sentMessage;
       });
     };

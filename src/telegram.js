@@ -8,6 +8,9 @@ const botConfig = (env.isDevelopment()) ? {polling: true} : {
 };
 
 export const bot = new Telegraf(token);
+
+bot.use(Telegraf.memorySession());
+
 const webHookPath = `testbotserver.herokuapp.com/${token}`;
 export const isPolling = true || !botConfig.webHook;
 

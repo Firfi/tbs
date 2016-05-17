@@ -1,12 +1,16 @@
 import { join as joinMetaGroup, groupsFor, get as getGroup } from '../../metagroup.js';
-import { bot as telegram } from '../../telegram.js';
+import Router from '../router.js';
 
 export default
 class Relay {
+  welcome() {
+    return 'welcome to relay bot. type /join group_name or /leave group_name and do your messaging as usual.';
+  }
   constructor() {
 
+    const telegram = new Router('relay', this);
+
     telegram.hears(/^\/join (\w+)/, function * () { // TODO generic functionality for all metaGroup bots. leave/join/etc
-      this.state.done = true;
       const gid = this.match[1]; // new msg.chat.id actually
       const msg = this.message;
       const fromId = msg.from.id;
@@ -16,7 +20,6 @@ class Relay {
     });
 
     telegram.hears(/^\/leave (\w+)/, function * () {
-      this.state.done = true;
       const gid = this.match[1];
       const msg = this.message;
       const fromId = msg.from.id;
@@ -32,14 +35,12 @@ class Relay {
     });
 
     telegram.on('message', function * () {
-      if (this.state.done) return;
       const msg = this.message;
       const fromId = msg.from.id;
       groupsFor(fromId).then(groups => {
         Object.keys(groups).forEach(gid => {
           groups[gid].sendMessage(msg.text);
         })
-
       });
     });
 

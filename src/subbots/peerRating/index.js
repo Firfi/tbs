@@ -20,6 +20,9 @@ const msgToRecord = msg => {
 
 export default
 class PeerRating {
+  welcome() {
+    return 'welcome to PeerRating bot. type /start and or select a role with /role rate or /role create';
+  }
   constructor() {
     this.state = {
       roles: {
