@@ -12,7 +12,7 @@ export const bot = new Telegraf(token);
 bot.use(Telegraf.memorySession());
 
 const webHookPath = `/${token}`;
-export const isPolling = true || !botConfig.webHook;
+export const isPolling = !botConfig.webHook;
 
 if (!isPolling) {
   bot.removeWebHook().then(() => {
