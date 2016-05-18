@@ -11,12 +11,12 @@ export const bot = new Telegraf(token);
 
 bot.use(Telegraf.memorySession());
 
-const webHookPath = `testbotserver.herokuapp.com/${token}`;
+const webHookPath = `/${token}`;
 export const isPolling = true || !botConfig.webHook;
 
 if (!isPolling) {
   bot.removeWebHook().then(() => {
-    bot.setWebHook(`https://${webHookPath}`);
+    bot.setWebHook(`https://testbotserver.herokuapp.com${webHookPath}`);
   });
 } else {
   bot.removeWebHook().then(() => {
@@ -24,7 +24,7 @@ if (!isPolling) {
   });
 }
 
-export const webHookCallback = bot.webHookCallback(`/${webHookPath}`);
+export const webHookCallback = bot.webHookCallback(webHookPath);
 
 // Matches /echo [whatever]
 //bot.onText(/\/echo (.+)/, function (msg, match) {
