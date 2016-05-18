@@ -17,4 +17,4 @@ if (!isPolling) {
 new MainMenu(); // order depends. global first.
 new RelayBot();
 new TelegramQuiz();
-// new PeerRating();
+new PeerRating();

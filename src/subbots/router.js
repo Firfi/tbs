@@ -6,18 +6,20 @@ export const routes = {};
 
 // middleware that injects route name based on userId
 
+// TODO patch also this.reply for handlers
+
 const getRoute = fromId => {
   const routeName = state[fromId];
   return routes[routeName];
 };
 
 telegram.use(function * (next) {
-  const fromId = this.message.from.id;
+  const fromId = (this.callbackQuery || this.message).from.id;
   this.state.route = getRoute(fromId);
   yield next;
 });
 
-telegram.hears(/^\/route (\w+)/, function * (next) {
+telegram.hears(/^\/route (\w+)/, function * (next) { // TODO clear keyboard state on start of route change
   const fromId = this.message.from.id;
   this.state.done = true; // TODO no 'hears', just 'use' so more flexibility
   const rn = this.match[1];
@@ -47,6 +49,14 @@ class Route { // relay telegram methods
 const shouldSkip = (currentHandler, route) => {
   return !currentHandler.global && (!route || route.name !== currentHandler.name);
 };
+
+for (let k in telegram) { // mock all telegraf api methods by default
+  if (!telegram.hasOwnProperty(k) && typeof telegram[k] === 'function') {
+    Route.prototype[k] = telegram[k].bind(telegram);
+  }
+}
+
+// and override ones that we interested in
 
 ['hears', 'on'].forEach(m => Route.prototype[m] = function(a1, ...middleware) {
   const currentHandler = this;
