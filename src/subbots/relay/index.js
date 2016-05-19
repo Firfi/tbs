@@ -35,7 +35,7 @@ class Relay extends Route {
       });
     });
 
-    telegram.on('message', function * () {
+    telegram.on('message', function * (next) {
       const msg = this.message;
       const fromId = msg.from.id;
       groupsFor(fromId).then(groups => {

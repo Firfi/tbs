@@ -24,9 +24,9 @@ const getBot = (route, root) => {
 let _root; // meh
 
 export const init = root => {
-  _root = root;
+  _root = root; // TODO take .use stuff OUT as it applies on telegram before listeners from bots applied
   telegram.use(function * (next) { // fetch global route
-    // const fromId = (this.callbackQuery || this.message).from.id;
+                                   // const fromId = (this.callbackQuery || this.message).from.id;
     this.session.route = this.session.route || [];
     yield next;
   });
@@ -40,9 +40,6 @@ export const init = root => {
     this.state.done = true; // TODO no 'hears', just 'use' so more flexibility
     this.session.route = this.match[1].split('/');
     this.reply(`${this.match[1]} chosen`);
-  });
-  telegram.hears('/menu', function * () {
-    this.state.bot.sendWelcome(this);
   });
 };
 
@@ -93,16 +90,19 @@ export class Route {
   constructor(name) {
     this.name = name;
     this.telegram = mkTelegramFor(this);
+    this.telegram.hears(/\/menu/, function * () {
+      this.state.bot.sendWelcome(this);
+    });
     this.telegram.hears('/back', function * () {
       this.session.route.pop();
       const nextBot = getBot(this.session.route, _root);
-      nextBot.sendWelcome(this.message.chat.id);
+      nextBot.sendWelcome(this);
     });
   }
   sendWelcome(ctx) {
     const chatId = ctx.message.chat.id;
     const w = this.welcome && this.welcome(ctx);
-    if (w) this.telegram.sendMessage(chatId, w).catch(winston.error.bind(winston));
+    this.telegram.sendMessage(chatId, w || ctx.session.route.join('/')).catch(winston.error.bind(winston));
   }
 }
 

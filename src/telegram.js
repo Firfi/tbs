@@ -1,6 +1,6 @@
 const token = process.env.TELEGRAM_TOKEN;
 const Telegraf = require('telegraf');
-const session = require('telegraf-session-redis')
+import session from './telegrafSessionRedis.js';
 import env from './env.js';
 
 const botConfig = (env.isDevelopment()) ? {polling: true} : {
@@ -11,7 +11,7 @@ const botConfig = (env.isDevelopment()) ? {polling: true} : {
 export const bot = new Telegraf(token);
 
 bot.use(session({
-  store: process.env.REDISCLOUD_URL ? {url: process.env.REDISCLOUD_URL} : {
+  store: process.env.REDISCLOUD_URL ? { url: process.env.REDISCLOUD_URL } : {
     host: process.env.TELEGRAM_SESSION_HOST || '127.0.0.1',
     port: process.env.TELEGRAM_SESSION_PORT || 6379
   }
