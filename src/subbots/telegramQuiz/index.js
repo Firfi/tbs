@@ -1,15 +1,16 @@
-import Route from '../router.js';
+import { Route } from '../../router.js';
 import Quiz, { noAnswer } from '../../quiz.js';
 const chunk = require('lodash/chunk');
 const isUndefined = require('lodash/isUndefined');
 
 export default
-class TelegramQuiz {
+class TelegramQuiz extends Route {
   welcome() {
     return 'welcome to TelegramQuiz bot. type /start and do quiz.';
   }
-  constructor() {
-    const telegram = new Route('quiz', this);
+  constructor(name) {
+    super(name);
+    const telegram = this.telegram;
     // telegram-quiz related mappings
     let telegramQuizState = {
       // {chat id: {telegram message id: 'question id', running: boolean, currentQuestion, expirationTimeout}}

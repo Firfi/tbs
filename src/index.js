@@ -4,7 +4,8 @@ import { webHookCallback as telegramWebHookCallback, isPolling } from './telegra
 import TelegramQuiz from './subbots/telegramQuiz/index.js';
 import PeerRating from './subbots/peerRating/index.js';
 import RelayBot from './subbots/relay/index.js';
-import MainMenu from './telegramMainMenu.js';
+import { init as initRouter } from './router.js';
+import MainMenu from './subbots/mainMenu.js';
 const Promise = require('bluebird');
 const http = require('http');
 
@@ -14,7 +15,9 @@ if (!isPolling) {
   // server.use();
 }
 
-new MainMenu(); // order depends. global first.
-new RelayBot();
-new TelegramQuiz();
-new PeerRating();
+initRouter(MainMenu);
+
+// new MainMenu(); // order depends. global first.
+//new RelayBot();
+//new TelegramQuiz();
+//new PeerRating();

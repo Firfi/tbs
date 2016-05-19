@@ -1,14 +1,15 @@
 import { join as joinMetaGroup, groupsFor, get as getGroup } from '../../metagroup.js';
-import Router from '../router.js';
+import { Route } from '../../router.js';
 
 export default
-class Relay {
+class Relay extends Route {
   welcome() {
     return 'welcome to relay bot. type /join group_name or /leave group_name and do your messaging as usual.';
   }
-  constructor() {
+  constructor(name) {
+    super(name);
 
-    const telegram = new Router('relay', this);
+    const telegram = this.telegram;
 
     telegram.hears(/^\/join (\w+)/, function * () { // TODO generic functionality for all metaGroup bots. leave/join/etc
       const gid = this.match[1]; // new msg.chat.id actually

@@ -1,4 +1,4 @@
-import Route from '../router.js';
+import { Route } from '../../router.js';
 import { addRecord, popRecord, rateRecord, RATES } from './store.js';
 import R from 'ramda';
 
@@ -19,12 +19,13 @@ const msgToRecord = msg => {
 };
 
 export default
-class PeerRating {
+class PeerRating extends Route {
   welcome() {
     return 'welcome to PeerRating bot. type /start and or select a role with /role rate or /role create';
   }
-  constructor() {
-    const telegram = new Route('peers', this);
+  constructor(name) {
+    super(name);
+    const telegram = this.telegram;
     this.state = {
       roles: {
         // userId: role
