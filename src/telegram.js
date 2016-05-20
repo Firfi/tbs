@@ -32,6 +32,19 @@ if (!isPolling) {
 
 export const webHookCallback = bot.webHookCallback(webHookPath);
 
+export const utils = {
+  getEvent(ctx) {
+    return ctx.message || ctx.callbackQuery || ctx.inlineQuery || ctx.chosenInlineResult
+  },
+  getFromId(ctx) {
+    return this.getEvent(ctx).from.id;
+  },
+  getChatId(ctx) {
+    const chat = this.getEvent(ctx).chat || this.getEvent(ctx).message.chat;
+    return chat.id;
+  }
+};
+
 // Matches /echo [whatever]
 //bot.onText(/\/echo (.+)/, function (msg, match) {
 //  var fromId = msg.from.id;

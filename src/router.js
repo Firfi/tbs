@@ -2,7 +2,7 @@
 // import Route, { routes } from './subbots/router.js';
 const winston = require('winston');
 winston.level = 'debug';
-import { bot as telegram } from './telegram.js';
+import { bot as telegram, utils as telegramUtils } from './telegram.js';
 
 //export default class MainMenu {
 //  constructor() {
@@ -100,9 +100,12 @@ export class Route {
     });
   }
   sendWelcome(ctx) {
-    const chatId = ctx.message.chat.id;
-    const w = this.welcome && this.welcome(ctx);
-    this.telegram.sendMessage(chatId, w || ctx.session.route.join('/')).catch(winston.error.bind(winston));
+    const w = this.welcome && this.welcome(ctx) || ctx.session.route.join('/');
+    return this.sendMessage(ctx, w);
+  }
+  sendMessage(ctx, message) {
+    const chatId = telegramUtils.getChatId(ctx);
+    return this.telegram.sendMessage(chatId, message).catch(winston.error.bind(winston));
   }
 }
 
@@ -120,6 +123,10 @@ export class Menu extends Route {
       if (nextBot) {
         this.session.route = nextRoute;
         nextBot.sendWelcome(this);
+        winston.debug(`would send on enter message: ${!!nextBot.onEnter}`);
+        if (nextBot.onEnter) {
+          nextBot.onEnter(this);
+        }
       }
     });
 
