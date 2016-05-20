@@ -1,5 +1,5 @@
 import { Route } from '../../router.js';
-import { addRecord, popRecord, rateRecord, getRatesFor, RATES, START, WAIT_FOR_ITEM, RATING, aspects, getSession } from './store.js';
+import { addRecord, popRecord, rateRecord, RATES, START, WAIT_FOR_ITEM, RATING, aspects, getSession, PeerRatingSession } from './store.js';
 import R from 'ramda';
 import { utils as telegramUtils } from '../../telegram.js';
 const winston = require('winston');
@@ -35,30 +35,24 @@ class PeerRating extends Route {
   onEnter(ctx) {
     this.askForItem(ctx);
   }
+  setStep(ctx, step) {
+    ctx.state.session.step = step;
+    return ctx.state.session.save();
+  }
   askForItem(ctx) {
-    this.updateSession(ctx, {step: WAIT_FOR_ITEM});
-    this.sendMessage(ctx, 'Send your voice or text message to rate'); // and listen in on('message')
+    return this.setStep(ctx, WAIT_FOR_ITEM).then(() => {
+      this.sendMessage(ctx, 'Send your voice or text message to rate'); // and listen in on('message')
+    }).catch(winston.error);
   }
   askForRole(ctx) {
     this.sendMessage(ctx, 'Send /next for next item, /create to add your own item or /back to exit');
   }
-  getSession(uid) {
-    return this.session[uid] || this.getInitialSession();
-  }
-  setSession(uid, s) {
-    this.session[uid] = s;
-  }
-  updateSession(ctx, s) {
-    const fromId = telegramUtils.getFromId(ctx);
-    const session = this.getSession(fromId);
-    this.setSession(fromId, Object.assign(session, s));
-  }
   sendNextRating(ctx) {
     const fromId = telegramUtils.getFromId(ctx);
     const chatId = telegramUtils.getChatId(ctx);
-    const session = this.getSession(fromId);
+    const { session } = ctx.state;
     if (session.step === RATING) {
-      popRecord(fromId).then(record => {
+      return popRecord(fromId).then(record => {
         winston.debug(`got next record for user ${fromId}: ${JSON.stringify(record)}`);
         if (record) {
           const replyOpts = (aspect) => ({
@@ -80,14 +74,15 @@ class PeerRating extends Route {
           };
           const handler = handlers[record.type];
           if (handler) {
-            handler(record).then(() => { // record sent, and send aspects:
-              this.updateSession(ctx, {recordToRateId: record.id});
-              aspects.reduce((p, { name, description }) => { // otherwise sending order is undefined
+            return handler(record)
+              .then(() => session.update({recordToRateId: record._id}))
+              .then(() => aspects.reduce((p, { name, description }) => { // otherwise sending order is undefined
                 return p.then(() => ctx.reply(description, replyOpts(name)));
-              }, Promise.resolve()).catch(e => winston.error(e));
-            }).catch(e => console.error(e));
+              }, Promise.resolve()))
+              .catch(e => console.error(e));
           } else {
-            throw new Error('not recognized record type', record);
+            const e = new Error('not recognized record type', record);
+            return Promise.reject(e);
           }
         } else {
           ctx.reply('no records to rate');
@@ -95,19 +90,20 @@ class PeerRating extends Route {
         }
       });
     } else {
-      winston.error(`Wrong step for user ${fromId}, in sendNextRating. ${session.step} instead of ${RATE}`);
+      const err = `Wrong step for user ${fromId}, in sendNextRating. ${session.step} instead of ${RATE}`;
+      return Promise.reject(err);
     }
 
   }
   endRating(ctx) {
-    this.updateSession(ctx, {step: START});
-    const chatId = telegramUtils.getChatId(ctx);
-    this.telegram.sendMessage(chatId, 'Rating done.')
+    return this.setStep(ctx, START).then(() => {
+      const chatId = telegramUtils.getChatId(ctx);
+      return this.telegram.sendMessage(chatId, 'Rating done.')
+    }).catch(winston.error);
   }
   constructor(name) {
     super(name);
     const telegram = this.telegram;
-    this.session = {}; // userId: session stuff TODO persistance
     const peerRating = this; // geez
     //telegram.hears(/^\/start/, function * () { // TODO CHECK IF RUNNING
     //  // TODO encapsulate, add PR or ask dev to improve it
@@ -130,10 +126,11 @@ class PeerRating extends Route {
     });
     telegram.hears('/next', function * () {
       const fromId = telegramUtils.getFromId(this);
-      const session = peerRating.getSession(this);
+      const { session } = this.state;
       if (session.step === START) {
-        peerRating.updateSession(this, {step: RATING});
-        peerRating.sendNextRating(this);
+        peerRating.setStep(this, RATING).then(() => {
+          return peerRating.sendNextRating(this);
+        }).catch(winston.error);
       } else {
         winston.error(`Wrong step for user ${fromId}, in sendNextRating. ${session.step} instead of ${START}`);
       }
@@ -144,17 +141,15 @@ class PeerRating extends Route {
     telegram.on('message', function * (next) {
       const msg = this.message;
       const fromId = telegramUtils.getFromId(this);
-      const session = peerRating.getSession(fromId); // TODO incapsulate in middleware
+      const { session } = this.state;
       if (session.step === WAIT_FOR_ITEM) {
         const type = messageType(msg);
         if (!type) this.reply('unsupported message type');
         else {
-          addRecord(msgToRecord(msg)).then(() => {
-            peerRating.updateSession(this, {step: RATING});
-            this.reply('Record added.').then(() => {
-              peerRating.sendNextRating(this);
-            });
-          }).done();
+          addRecord(msgToRecord(msg))
+            .then(() => peerRating.setStep(this, RATING))
+            .then(() => this.reply('Record added.'))
+            .then(() => peerRating.sendNextRating(this)).catch(winston.error);
         }
       } else if (session.step === RATING) {
         // TODO add arbitrary message to LAST rated item !!!
@@ -162,7 +157,7 @@ class PeerRating extends Route {
     });
     telegram.on('callback_query', function * () {
       const fromId = telegramUtils.getFromId(this);
-      const session = peerRating.getSession(fromId);
+      const { session } = this.state;
       const { callbackQuery } = this;
       const { message: { message_id: messageId, chat: { id: chatId } } } = callbackQuery;
       if (session.step === RATING) {
@@ -170,22 +165,21 @@ class PeerRating extends Route {
         const [rateString, aspect] = callbackQuery.data.split(':');
         const rateValue = Number(rateString);
         // TODO validate aspect
-        rateRecord(recordId, aspect, rateValue, fromId).then((rate) => {
+        rateRecord(recordId, aspect, rateValue, fromId).then((record) => {
           /*telegram.editMessageReplyMarkup(chatId, messageId, {inline_keyboard: []}) No need to do it! client hide it anyway*/
-          Promise.resolve().then((message) => {
-            telegram.editMessageText(chatId, messageId, `${aspect} rated: ${rateValue}`)
-          }).catch(e => console.error(e)); // TODO if several messages, only one will be edited. ADD ALL MESSAGES INDEX!
+          const editTextPromise = telegram.editMessageText(chatId, messageId, `${aspect} rated: ${rateValue}`);
           // TODO we can also add 'next' button instead now
-          this.answerCallbackQuery(`Aspect ${aspect} rated!`);
-          getRatesFor(recordId, fromId).then(rates => {
+          const ratedMessagePromise = this.answerCallbackQuery(`Aspect ${aspect} rated!`);
+          const allRatesResolvedPromise = Promise.resolve(record.rates).then(rates => {
+            console.warn('rates gotten:', rates.length);
             const uniqRatedAspects = R.compose(R.uniq, R.map(R.prop('aspect')))(rates);
+            console.warn('uniqRatedAspects', uniqRatedAspects, rates.toArray)
             const allRatedNow = uniqRatedAspects.length === aspects.length;
-            if (allRatedNow) {
-              peerRating.updateSession(this, {step: START});
-              peerRating.askForRole(this);
-            }
-          }).catch(e => winston.error(e));
-        });
+            console.warn('allRatedNow', allRatedNow);
+            return allRatedNow ? peerRating.setStep(this, START).then(() => peerRating.askForRole(this)) : Promise.resolve();
+          });
+          return Promise.all([editTextPromise, ratedMessagePromise, allRatesResolvedPromise]);
+        }).catch(winston.error);
       } else {
         winston.error(`Wrong step for user ${fromId}, in callback_query. ${session.step} instead of ${RATING}`);
       }
