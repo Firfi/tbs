@@ -35,6 +35,7 @@
     "eliza": "0.0.1-2",
     "hapi": "^13.3.0",
     "lodash": "^4.12.0",
+    "mongoose": "^4.4.17",
     "node-telegram-bot-api": "^0.21.1",
     "ramda": "^0.21.0",
     "redis": "^2.5.3",

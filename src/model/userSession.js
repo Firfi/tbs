@@ -7,11 +7,11 @@ export default UserSession = mongoose.model('UserSession', { // actually, how ab
   createdAt: Date,
   updatedAt: Date
 });
-
-// SIC! each bot can define own session models and use it, like
-
-export const QuizSession = mongoose.model('QuizSession', {
-  chatId: String,
-  userIds: [String],
-  answers: [Answer] // ... etc
-});
+//
+//// SIC! each bot can define own session models and use it, like
+//
+//export const QuizSession = mongoose.model('QuizSession', {
+//  chatId: String,
+//  userIds: [String],
+//  answers: [Answer] // ... etc
+//});

@@ -1,5 +1,5 @@
 import { Route } from '../../router.js';
-import { addRecord, popRecord, rateRecord, getRatesFor, RATES, aspects } from './store.js';
+import { addRecord, popRecord, rateRecord, getRatesFor, RATES, START, WAIT_FOR_ITEM, RATING, aspects, getSession } from './store.js';
 import R from 'ramda';
 import { utils as telegramUtils } from '../../telegram.js';
 const winston = require('winston');
@@ -11,10 +11,6 @@ const roles = [RATE, CREATE];
 
 const VOICE = 'voice';
 const TEXT = 'text';
-
-const START = 'start';
-const WAIT_FOR_ITEM = 'waitForItem'; // when we listen for user input with item to be rated
-const RATING = 'rating'; // and implicit step RECORD_RATING when there's RATING and record to rate id involved
 
 
 const recordTypes = [VOICE, TEXT];
@@ -112,11 +108,6 @@ class PeerRating extends Route {
     super(name);
     const telegram = this.telegram;
     this.session = {}; // userId: session stuff TODO persistance
-    this.state = {
-      roles: {
-        // userId: role
-      }
-    };
     const peerRating = this; // geez
     //telegram.hears(/^\/start/, function * () { // TODO CHECK IF RUNNING
     //  // TODO encapsulate, add PR or ask dev to improve it
@@ -132,6 +123,11 @@ class PeerRating extends Route {
     //    }
     //  })
     //});
+    telegram.use(function * (next) {
+      const fromId = telegramUtils.getFromId(this);
+      this.state.session = yield getSession(fromId);
+      yield next;
+    });
     telegram.hears('/next', function * () {
       const fromId = telegramUtils.getFromId(this);
       const session = peerRating.getSession(this);

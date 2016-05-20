@@ -1,6 +1,81 @@
 const Promise = require('bluebird');
 const R = require('ramda');
 const uniqueId = require('lodash/uniqueId');
+import mongoose from '../../model/index.js';
+
+export const aspects = [
+  {name: 'firstAspect', description: 'First aspect description'},
+  {name: 'secondAspect', description: 'Second aspect description'},
+  {name: 'thirdAspect', description: 'Third aspect description'}
+];
+
+const MIN_RATE = 1;
+const MAX_RATE = 5;
+export const RATES = R.range(MIN_RATE, MAX_RATE + 1);
+
+// steps
+
+export const START = 'start';
+export const WAIT_FOR_ITEM = 'waitForItem'; // when we listen for user input with item to be rated
+export const RATING = 'rating'; // and implicit step RECORD_RATING when there's RATING and record to rate id involved
+
+export const STEPS = [START, WAIT_FOR_ITEM, RATING];
+
+const Rate = new mongoose.Schema({
+  fromId: Number,
+  aspect: {
+    type: String,
+    'enum': R.map(R.prop('name'))(aspects)
+  },
+  rate: {
+    type: Number,
+    'enum': RATES
+  }
+});
+
+const PeerRatingItem = mongoose.model('PeerRatingItem', {
+  type: String,
+  text: String,
+  fromId: Number,
+  id: String,
+  rated: Boolean,
+  rates: [Rate]
+});
+
+const PeerRatingSession = mongoose.model('PeerRatingSession', {
+  userId: Number,
+  step: {
+    type: String,
+    'enum': STEPS
+  },
+  recordToRateId: {
+    type: Number
+  }
+});
+
+//PeerRatingSession.pre('validate', function(next) { // TODO
+//  if (this.recordToRateId && this.step !== RATING) {
+//    next(Error(`recordToRateId not expected if step not ${RATING}`));
+//  } else {
+//    next();
+//  }
+//});
+
+export const getInitialSession = () => {
+  return new PeerRatingSession({
+    step: START
+  });
+} ;
+
+export const getSession = function * (userId) {
+  let s = yield PeerRatingSession.findOne({userId}).exec();
+  if (!s) {
+    s = getInitialSession();
+    s.userId = userId;
+    yield s.save();
+  }
+  return s;
+};
 
 let store = [
   {
@@ -13,19 +88,9 @@ let store = [
   }
 ];
 
-export const aspects = [
-  {name: 'firstAspect', description: 'First aspect description'},
-  {name: 'secondAspect', description: 'Second aspect description'},
-  {name: 'thirdAspect', description: 'Third aspect description'}
-];
-
 const findUnrated = (uid) => R.find(R.both(R.propEq('rated', false), R.complement(R.propEq('fromId', uid))));
 
 const getRecord = id => R.find(R.propEq('id', id))(store);
-
-const MIN_RATE = 1;
-const MAX_RATE = 5;
-export const RATES = R.range(MIN_RATE, MAX_RATE + 1);
 
 export const addRecord = (r) => {
   return new Promise(success => {
