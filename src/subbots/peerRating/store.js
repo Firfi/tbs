@@ -31,13 +31,13 @@ const Rate = new mongoose.Schema({
     type: Number,
     'enum': RATES
   }
-});
+}, {timestamps: true});
 
 const Voice = new mongoose.Schema({
   file_id: String
 });
 
-const PeerRatingItem = mongoose.model('PeerRatingItem', {
+const PeerRatingItem = mongoose.model('PeerRatingItem', new mongoose.Schema({
   type: String,
   text: String,
   voice: Voice,
@@ -45,9 +45,9 @@ const PeerRatingItem = mongoose.model('PeerRatingItem', {
   id: String,
   rated: Boolean,
   rates: [Rate]
-});
+}, {timestamps: true}));
 
-export const PeerRatingSession = mongoose.model('PeerRatingSession', {
+export const PeerRatingSession = mongoose.model('PeerRatingSession', new mongoose.Schema({
   userId: Number,
   step: {
     type: String,
@@ -56,7 +56,7 @@ export const PeerRatingSession = mongoose.model('PeerRatingSession', {
   recordToRateId: {
     type: String
   }
-});
+}, {timestamps: true}));
 
 //PeerRatingSession.pre('validate', function(next) { // TODO
 //  if (this.recordToRateId && this.step !== RATING) {
