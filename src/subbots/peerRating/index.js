@@ -1,5 +1,7 @@
 import { Route } from '../../router.js';
-import { addRecord, popRecord, rateRecord, RATES, START, WAIT_FOR_ITEM, RATING, aspects, getSession, PeerRatingSession } from './store.js';
+import { addRecord, popRecord, rateRecord, RATES, START, WAIT_FOR_ITEM, RATING,
+  aspects, getSession, getSessionPromise,
+  storeRateNotification, popRateNotifications, PeerRatingRateNotification, ratesForRecord } from './store.js';
 import R from 'ramda';
 import { utils as telegramUtils } from '../../telegram.js';
 const winston = require('winston');
@@ -106,6 +108,23 @@ class PeerRating extends Route {
       return this.telegram.sendMessage(chatId, 'Rating done.')
     }).catch(winston.error);
   }
+  sendRateNotification(record, ratedById) {
+    // TODO actually not uid but chat id but we don't store it for now. session ? also user could close chat.
+    winston.debug(`rates notification going for record ${record._id} and user ${record.fromId}`);
+    const rates = ratesForRecord(record, ratedById);
+    return this.telegram.sendMessage(record.fromId, `Your item have been rated: \n${rates.map(rate => `${rate.aspect}: ${rate.rate}`).join('\n')}`);
+  }
+  notifyAboutRate(ctx, record) {
+    const ratedById = telegramUtils.getFromId(ctx);
+    const uid = record.fromId;
+    return getSessionPromise(uid).then(session => {
+      if (session && session.step === RATING) {
+        return storeRateNotification(record, ratedById);
+      } else {
+        return this.sendRateNotification(record, ratedById);
+      }
+    });
+  }
   constructor(name) {
     super(name);
   }
@@ -176,13 +195,25 @@ class PeerRating extends Route {
         rateRecord(recordId, aspectName, rateValue, fromId).then((record) => {
           if (aspects.map(a => a.name).indexOf(aspectName) === -1) throw new Error(`No such aspect: ${aspectName}`);
           const nextAspect = aspects[R.findIndex(R.propEq('name', aspectName))(aspects) + 1];
-          return telegram.editMessageText(chatId, messageId,
-            `${aspectName} rated: ${rateValue}\nnext: ${nextAspect ? nextAspect.description : 'done'}`) // TODO we can have all rates as well
-            .then(() => this.answerCallbackQuery(`Aspect ${aspectName} rated!`))
-            .then(() => nextAspect ?
-              telegram.editMessageReplyMarkup(chatId, messageId, peerRating.aspectReplyOpts(nextAspect).reply_markup) :
-              peerRating.setStep(this, START).then(() => peerRating.askForRole(this))
-          );
+          return Promise.all([
+            telegram.editMessageText(chatId, messageId,
+              `${aspectName} rated: ${rateValue}\nnext: ${nextAspect ? nextAspect.description : 'done'}`) // TODO we can have all rates as well
+              .then(() => this.answerCallbackQuery(`Aspect ${aspectName} rated!`))
+              .then(() => nextAspect ?
+                telegram.editMessageReplyMarkup(chatId, messageId, peerRating.aspectReplyOpts(nextAspect).reply_markup) :
+                peerRating.setStep(this, START).then(() => peerRating.askForRole(this))
+                .then(() => {
+                  return popRateNotifications(fromId).then(notificationsWithRecords => {
+                    winston.debug(`got records/notifications for rate notifications from polling ${notificationsWithRecords.length}`);
+                    return Promise.all(notificationsWithRecords.map(({ record, notification }) => {
+                      return peerRating.sendRateNotification(record, notification.ratedById, fromId);
+                    }));
+                  });
+                }) // poll waiting notifications logic here
+            ),
+            // and notify rated user // record.fromId
+            !nextAspect ? peerRating.notifyAboutRate(this, record) : Promise.resolve()
+          ]);
         }).catch(winston.error);
       } else {
         winston.error(`Wrong step for user ${fromId}, in callback_query. ${session.step} instead of ${RATING}`);

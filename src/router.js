@@ -88,7 +88,7 @@ export class Route {
         yield next;
       });
       telegram.hears(/\/start/, function * () { // sic! not this.telegram
-        this.state.done = true;
+        this.state.done = true; // TODO
         _root.sendWelcome(this);
       });
       telegram.hears(/\/menu/, function * () {

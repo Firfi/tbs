@@ -42,13 +42,13 @@ const PeerRatingItem = mongoose.model('PeerRatingItem', new mongoose.Schema({
   text: String,
   voice: Voice,
   fromId: Number,
-  id: String,
   rated: Boolean,
   rates: [Rate]
 }, {timestamps: true}));
 
-export const PeerRatingSession = mongoose.model('PeerRatingSession', new mongoose.Schema({
+const PeerRatingSession = mongoose.model('PeerRatingSession', new mongoose.Schema({
   userId: Number,
+  chatId: Number, // TODO
   step: {
     type: String,
     'enum': STEPS
@@ -56,6 +56,12 @@ export const PeerRatingSession = mongoose.model('PeerRatingSession', new mongoos
   recordToRateId: {
     type: String
   }
+}, {timestamps: true}));
+
+const PeerRatingRateNotification = mongoose.model('PeerRatingRateNotification', new mongoose.Schema({
+  ratedById: Number,
+  itemId: String,
+  userId: Number // DENORMALISE!!! but we don't want to pop all user records?
 }, {timestamps: true}));
 
 //PeerRatingSession.pre('validate', function(next) { // TODO
@@ -73,13 +79,17 @@ export const getInitialSession = () => {
 } ;
 
 export const getSession = function * (userId) { // for using in middleware
-  let s = yield PeerRatingSession.findOne({userId}).exec();
+  let s = yield getSessionPromise(userId).exec();
   if (!s) {
     s = getInitialSession();
     s.userId = userId;
     yield s.save();
   }
   return s;
+};
+
+export const getSessionPromise = (userId) => {
+  return PeerRatingSession.findOne({ userId });
 };
 
 const findUnrated = (uid) => R.find(R.both(R.propEq('rated', false), R.complement(R.propEq('fromId', uid))));
@@ -115,4 +125,30 @@ export const rateRecord = (id, aspect, rate, uid) => { // TODO who rated?
     return record.save();
   });
   // return PeerRatingItem.findByIdAndUpdate(id, {$push: {rates: }}).then((r) => PeerRatingItem.findById(id)).then(r => console.warn('r.rates', r.rates, r.rates.length) || r).catch(e => console.error(e)); // TODO in one request.
+};
+
+export const storeRateNotification = (record, ratedById) => {
+  return new PeerRatingRateNotification({
+    itemId: record._id,
+    userId: record.fromId,
+    ratedById
+  }).save();
+};
+
+export const ratesForRecord = (record, ratedById) => {
+  return R.pipe(
+    R.filter(R.propEq('fromId', ratedById)),
+    R.sortBy(R.prop('createdAt')),
+    R.uniqBy(R.prop('aspect')) // ASSUME all aspects is there (no harm otherwise)
+  )(record.rates);
+};
+
+export const popRateNotifications = uid => {
+  return PeerRatingRateNotification.find({
+    userId: uid
+  }).then(ns => Promise.all(ns.map(notification => {
+    return PeerRatingItem.findById(notification.itemId).then(record => {
+      return { record, notification }; // sic! otherwise, if one item rated by two users - very tricky to find bug.
+    }).then(result => notification.remove().then(_ => result)); // remove it right after getting
+  })));
 };
