@@ -94,9 +94,13 @@ export const popRecord = (uid) => { // TODO pop record strategy
 };
 
 export const rateRecord = (id, aspect, rate, uid) => { // TODO who rated?
-  return PeerRatingItem.findByIdAndUpdate(id, {$push: {rates: {
-    userId: uid,
-    aspect,
-    rate
-  }}}).then(() => );
+  return PeerRatingItem.findById(id).then(record => {
+    record.rates.push({
+      fromId: uid,
+      aspect,
+      rate
+    });
+    return record.save();
+  });
+  // return PeerRatingItem.findByIdAndUpdate(id, {$push: {rates: }}).then((r) => PeerRatingItem.findById(id)).then(r => console.warn('r.rates', r.rates, r.rates.length) || r).catch(e => console.error(e)); // TODO in one request.
 };

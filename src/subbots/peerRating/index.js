@@ -170,12 +170,9 @@ class PeerRating extends Route {
           const editTextPromise = telegram.editMessageText(chatId, messageId, `${aspect} rated: ${rateValue}`);
           // TODO we can also add 'next' button instead now
           const ratedMessagePromise = this.answerCallbackQuery(`Aspect ${aspect} rated!`);
-          const allRatesResolvedPromise = Promise.resolve(record.rates).then(rates => {
-            console.warn('rates gotten:', rates.length);
+          const allRatesResolvedPromise = Promise.resolve(record.rates.filter(r => r.fromId === fromId)).then(rates => {
             const uniqRatedAspects = R.compose(R.uniq, R.map(R.prop('aspect')))(rates);
-            console.warn('uniqRatedAspects', uniqRatedAspects, rates.toArray)
             const allRatedNow = uniqRatedAspects.length === aspects.length;
-            console.warn('allRatedNow', allRatedNow);
             return allRatedNow ? peerRating.setStep(this, START).then(() => peerRating.askForRole(this)) : Promise.resolve();
           });
           return Promise.all([editTextPromise, ratedMessagePromise, allRatesResolvedPromise]);
