@@ -108,6 +108,9 @@ class PeerRating extends Route {
   }
   constructor(name) {
     super(name);
+  }
+  init(parent) {
+    super.init(parent);
     const telegram = this.telegram;
     const peerRating = this; // geez
     //telegram.hears(/^\/start/, function * () { // TODO CHECK IF RUNNING
@@ -179,7 +182,7 @@ class PeerRating extends Route {
             .then(() => nextAspect ?
               telegram.editMessageReplyMarkup(chatId, messageId, peerRating.aspectReplyOpts(nextAspect).reply_markup) :
               peerRating.setStep(this, START).then(() => peerRating.askForRole(this))
-            );
+          );
         }).catch(winston.error);
       } else {
         winston.error(`Wrong step for user ${fromId}, in callback_query. ${session.step} instead of ${RATING}`);

@@ -14,6 +14,7 @@ import { bot as telegram, utils as telegramUtils } from './telegram.js';
 //  }
 //}
 
+export const ROOT = 'root';
 
 const getBot = (route, root) => {
   // assumptions: bot is always instance of menu; menu always have items; items contains route part
@@ -23,25 +24,7 @@ const getBot = (route, root) => {
 
 let _root; // meh
 
-export const init = root => {
-  _root = root; // TODO take .use stuff OUT as it applies on telegram before listeners from bots applied
-  telegram.use(function * (next) { // fetch global route
-                                   // const fromId = (this.callbackQuery || this.message).from.id;
-    this.session.route = this.session.route || [];
-    yield next;
-  });
-  telegram.use(function * (next) {
-    this.state.bot = getBot(this.session.route, root);
-    winston.debug('gotten bot:', this.state.bot.name);
-    yield next;
-  });
-  telegram.hears(/^\/global route ([\w\/]+)/, function * () { // TODO clear keyboard state on start of route change
-    const fromId = this.message.from.id;
-    this.state.done = true; // TODO no 'hears', just 'use' so more flexibility
-    this.session.route = this.match[1].split('/');
-    this.reply(`${this.match[1]} chosen`);
-  });
-};
+
 
 
 
@@ -90,14 +73,36 @@ export class Route {
   constructor(name) {
     this.name = name;
     this.telegram = mkTelegramFor(this);
-    this.telegram.hears(/\/menu/, function * () {
-      this.state.bot.sendWelcome(this);
-    });
-    this.telegram.hears('/back', function * () {
-      this.session.route.pop();
-      const nextBot = getBot(this.session.route, _root);
-      nextBot.sendWelcome(this);
-    });
+  }
+  init(parent) {
+    if (this.name === ROOT) {
+      _root = this;
+      telegram.use(function * (next) { // fetch global route
+        // const fromId = (this.callbackQuery || this.message).from.id;
+        this.session.route = this.session.route || [];
+        yield next;
+      });
+      telegram.use(function * (next) {
+        this.state.bot = getBot(this.session.route, _root);
+        winston.debug('gotten bot:', this.state.bot.name);
+        yield next;
+      });
+      telegram.hears(/\/start/, function * () { // sic! not this.telegram
+        this.state.done = true;
+        _root.sendWelcome(this);
+      });
+      telegram.hears(/\/menu/, function * () {
+        this.state.done = true;
+        this.state.bot.sendWelcome(this);
+      });
+      telegram.hears('/back', function * () {
+        this.state.done = true;
+        this.session.route.pop();
+        const nextBot = getBot(this.session.route, _root);
+        nextBot.sendWelcome(this);
+      });
+
+    }
   }
   sendWelcome(ctx) {
     const w = this.welcome && this.welcome(ctx) || ctx.session.route.join('/');
@@ -116,19 +121,23 @@ export class Menu extends Route {
   constructor(name, items) {
     super(name);
     this.menuItems = items;
+  }
+  init(parent) {
+    super.init(parent);
     this.telegram.hears(/\/go (\w+)/, function * () {
       const next = this.match[1];
       const nextRoute = this.session.route.concat([next]);
       const nextBot = getBot(nextRoute, _root);
       if (nextBot) {
         this.session.route = nextRoute;
-        nextBot.sendWelcome(this);
-        winston.debug(`would send on enter message: ${!!nextBot.onEnter}`);
-        if (nextBot.onEnter) {
-          nextBot.onEnter(this);
-        }
+        nextBot.sendWelcome(this).then(() => {
+          winston.debug(`would send on enter message: ${!!nextBot.onEnter}`);
+          if (nextBot.onEnter) {
+            nextBot.onEnter(this);
+          }
+        });
       }
     });
-
+    this.menuItems.forEach(item => item.init(this));
   }
 }

@@ -10,6 +10,9 @@ class TelegramQuiz extends Route {
   }
   constructor(name) {
     super(name);
+  }
+  init(parent) {
+    super.init(parent);
     const telegram = this.telegram;
     // telegram-quiz related mappings
     let telegramQuizState = {
@@ -35,22 +38,22 @@ class TelegramQuiz extends Route {
           // selective: true // Targets: 1) users that are @mentioned in the text of the Message object; 2) if the bot's message is a reply (has reply_to_message_id) not actualy if several users
         }
       })
-      .then(sentMessage => {
-        if (sentMessage) {
-          const mid = sentMessage.message_id;
-          telegramQuizState[chatId].idMapping[mid] = q.id;
-          if (time) { // set question expire timeout
-            telegramQuizState[chatId].expirationTimeout = setTimeout(() => {
-              delete telegramQuizState[chatId].expirationTimeout;
-              giveAnswer(chatId, undefined, qid, undefined);
-            }, time);
+        .then(sentMessage => {
+          if (sentMessage) {
+            const mid = sentMessage.message_id;
+            telegramQuizState[chatId].idMapping[mid] = q.id;
+            if (time) { // set question expire timeout
+              telegramQuizState[chatId].expirationTimeout = setTimeout(() => {
+                delete telegramQuizState[chatId].expirationTimeout;
+                giveAnswer(chatId, undefined, qid, undefined);
+              }, time);
+            }
+          } else {
+            delete telegramQuizState[chatId]; // bot switched to another. TODO generic destructor
           }
-        } else {
-          delete telegramQuizState[chatId]; // bot switched to another. TODO generic destructor
-        }
 
-        return sentMessage;
-      });
+          return sentMessage;
+        });
     };
 
     const giveAnswer = (chatId, fromId, questionId, answerId, quiz=Quiz.getQuiz(chatId)) => {

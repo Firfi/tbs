@@ -8,7 +8,9 @@ class Relay extends Route {
   }
   constructor(name) {
     super(name);
-
+  }
+  init(parent) {
+    super.init(parent);
     const telegram = this.telegram;
 
     telegram.hears(/^\/join (\w+)/, function * () { // TODO generic functionality for all metaGroup bots. leave/join/etc
