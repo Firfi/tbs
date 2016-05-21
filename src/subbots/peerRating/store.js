@@ -93,6 +93,15 @@ export const popRecord = (uid) => { // TODO pop record strategy
   return PeerRatingItem.findOne({/*fromId: {$ne: uid},*/ rated: false});
 };
 
+const shouldMarkItemRated = (record, uid) => {
+  const uniqAspectsForUser = R.pipe(
+    R.filter(R.propEq('fromId', uid)),
+    R.map(R.prop('aspect')),
+    R.uniq
+  )(record.rates);
+  return uniqAspectsForUser.length === aspects.length;
+};
+
 export const rateRecord = (id, aspect, rate, uid) => { // TODO who rated?
   return PeerRatingItem.findById(id).then(record => {
     record.rates.push({
@@ -100,6 +109,9 @@ export const rateRecord = (id, aspect, rate, uid) => { // TODO who rated?
       aspect,
       rate
     });
+    if (shouldMarkItemRated(record, uid)) {
+      record.rated = true;
+    }
     return record.save();
   });
   // return PeerRatingItem.findByIdAndUpdate(id, {$push: {rates: }}).then((r) => PeerRatingItem.findById(id)).then(r => console.warn('r.rates', r.rates, r.rates.length) || r).catch(e => console.error(e)); // TODO in one request.

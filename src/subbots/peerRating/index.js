@@ -47,7 +47,21 @@ class PeerRating extends Route {
   askForRole(ctx) {
     this.sendMessage(ctx, 'Send /next for next item, /create to add your own item or /back to exit');
   }
-  sendNextRating(ctx) {
+  aspectReplyOpts(aspect) {
+    return {
+      reply_markup: {
+        inline_keyboard: [RATES.map(r => ({
+          callback_data: [String(r), aspect.name].join(':'), // be aware that a bad client can send arbitrary data in this field // TODO can also have record here to have a 'stale record' message
+          text: String(r), // TODO texts like 'poor', 'good' etc,
+          hide_keyboard: true
+        }))]
+      }
+    };
+  }
+  sendAspectToRate(ctx, aspect) {
+    return ctx.reply(aspect.description, this.aspectReplyOpts(aspect))
+  }
+  initNextRating(ctx) {
     const fromId = telegramUtils.getFromId(ctx);
     const chatId = telegramUtils.getChatId(ctx);
     const { session } = ctx.state;
@@ -55,15 +69,7 @@ class PeerRating extends Route {
       return popRecord(fromId).then(record => {
         winston.debug(`got next record for user ${fromId}: ${JSON.stringify(record)}`);
         if (record) {
-          const replyOpts = (aspect) => ({
-            reply_markup: {
-              inline_keyboard: [RATES.map(r => ({
-                callback_data: [String(r), aspect].join(':'), // be aware that a bad client can send arbitrary data in this field
-                text: String(r), // TODO texts like 'poor', 'good' etc,
-                hide_keyboard: true
-              }))]
-            }
-          });
+
           const handlers = {
             [VOICE](record) {
               return ctx.replyWithVoice(record[VOICE].file_id);
@@ -74,11 +80,10 @@ class PeerRating extends Route {
           };
           const handler = handlers[record.type];
           if (handler) {
+            const firstAspect = aspects[0];
             return handler(record)
               .then(() => session.update({recordToRateId: record._id}))
-              .then(() => aspects.reduce((p, { name, description }) => { // otherwise sending order is undefined
-                return p.then(() => ctx.reply(description, replyOpts(name)));
-              }, Promise.resolve()))
+              .then(() => this.sendAspectToRate(ctx, firstAspect))
               .catch(e => console.error(e));
           } else {
             const e = new Error('not recognized record type', record);
@@ -129,10 +134,10 @@ class PeerRating extends Route {
       const { session } = this.state;
       if (session.step === START) {
         peerRating.setStep(this, RATING).then(() => {
-          return peerRating.sendNextRating(this);
+          return peerRating.initNextRating(this);
         }).catch(winston.error);
       } else {
-        winston.error(`Wrong step for user ${fromId}, in sendNextRating. ${session.step} instead of ${START}`);
+        winston.error(`Wrong step for user ${fromId}, in initNextRating. ${session.step} instead of ${START}`);
       }
     });
     telegram.hears('/create', function * () {
@@ -149,7 +154,7 @@ class PeerRating extends Route {
           addRecord(msgToRecord(msg))
             .then(() => peerRating.setStep(this, RATING))
             .then(() => this.reply('Record added.'))
-            .then(() => peerRating.sendNextRating(this)).catch(winston.error);
+            .then(() => peerRating.initNextRating(this)).catch(winston.error);
         }
       } else if (session.step === RATING) {
         // TODO add arbitrary message to LAST rated item !!!
@@ -162,20 +167,19 @@ class PeerRating extends Route {
       const { message: { message_id: messageId, chat: { id: chatId } } } = callbackQuery;
       if (session.step === RATING) {
         const recordId = session.recordToRateId;
-        const [rateString, aspect] = callbackQuery.data.split(':');
+        const [rateString, aspectName] = callbackQuery.data.split(':');
         const rateValue = Number(rateString);
         // TODO validate aspect
-        rateRecord(recordId, aspect, rateValue, fromId).then((record) => {
-          /*telegram.editMessageReplyMarkup(chatId, messageId, {inline_keyboard: []}) No need to do it! client hide it anyway*/
-          const editTextPromise = telegram.editMessageText(chatId, messageId, `${aspect} rated: ${rateValue}`);
-          // TODO we can also add 'next' button instead now
-          const ratedMessagePromise = this.answerCallbackQuery(`Aspect ${aspect} rated!`);
-          const allRatesResolvedPromise = Promise.resolve(record.rates.filter(r => r.fromId === fromId)).then(rates => {
-            const uniqRatedAspects = R.compose(R.uniq, R.map(R.prop('aspect')))(rates);
-            const allRatedNow = uniqRatedAspects.length === aspects.length;
-            return allRatedNow ? peerRating.setStep(this, START).then(() => peerRating.askForRole(this)) : Promise.resolve();
-          });
-          return Promise.all([editTextPromise, ratedMessagePromise, allRatesResolvedPromise]);
+        rateRecord(recordId, aspectName, rateValue, fromId).then((record) => {
+          if (aspects.map(a => a.name).indexOf(aspectName) === -1) throw new Error(`No such aspect: ${aspectName}`);
+          const nextAspect = aspects[R.findIndex(R.propEq('name', aspectName))(aspects) + 1];
+          return telegram.editMessageText(chatId, messageId,
+            `${aspectName} rated: ${rateValue}\nnext: ${nextAspect ? nextAspect.description : 'done'}`) // TODO we can have all rates as well
+            .then(() => this.answerCallbackQuery(`Aspect ${aspectName} rated!`))
+            .then(() => nextAspect ?
+              telegram.editMessageReplyMarkup(chatId, messageId, peerRating.aspectReplyOpts(nextAspect).reply_markup) :
+              peerRating.setStep(this, START).then(() => peerRating.askForRole(this))
+            );
         }).catch(winston.error);
       } else {
         winston.error(`Wrong step for user ${fromId}, in callback_query. ${session.step} instead of ${RATING}`);
