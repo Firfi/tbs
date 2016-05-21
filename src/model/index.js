@@ -1,4 +1,4 @@
 const mongoose = require('mongoose');
-mongoose.connect('mongodb://localhost/botserver');
+mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost/botserver');
 
 export default mongoose;
