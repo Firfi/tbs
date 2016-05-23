@@ -20,6 +20,7 @@ export const ROOT = 'root';
 export const BACK_COMMAND = '/back';
 export const MENU_COMMAND = '/menu';
 export const START_COMMAND = '/start';
+export const HELP_COMMAND = '/help';
 
 const getBot = (route, root) => {
   // assumptions: bot is always instance of menu; menu always have items; items contains route part
@@ -107,7 +108,11 @@ export class Route {
         const nextBot = getBot(this.session.route, _root);
         nextBot.sendWelcome(this);
       });
-
+      telegram.hears(HELP_COMMAND, function * () {
+        this.state.done = true;
+        const helpMessage = (this.state.bot.help && this.state.bot.help()) || 'Generic help here';
+        this.state.bot.sendMessage(this, helpMessage);
+      });
     }
   }
   sendWelcome(ctx) {

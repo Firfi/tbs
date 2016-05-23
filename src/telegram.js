@@ -2,6 +2,7 @@ const token = process.env.TELEGRAM_TOKEN;
 const Telegraf = require('telegraf');
 import session from './telegrafSessionRedis.js';
 import env from './env.js';
+const merge = require('lodash/merge');
 
 const botConfig = (env.isDevelopment()) ? {polling: true} : {
   polling: false,
@@ -46,9 +47,15 @@ export const utils = {
   oneTimeKeyboard(kb) {
     return {reply_markup: {
       keyboard: kb,
-      force_reply: true,
       one_time_keyboard: true
     }};
+  },
+  hideKeyboard(kb) {
+    return merge(kb || {}, {
+      reply_markup: {
+        hide_keyboard: true
+      }
+    })
   }
 };
 

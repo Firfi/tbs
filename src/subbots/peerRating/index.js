@@ -1,10 +1,10 @@
-import { Route, BACK_COMMAND } from '../../router.js';
+import { Route, BACK_COMMAND, HELP_COMMAND, MENU_COMMAND } from '../../router.js';
 import { addRecord, popRecord, rateRecord, RATES, START, WAIT_FOR_ITEM, RATING,
   aspects, getSession, getSessionPromise,
   storeRateNotification, popRateNotifications, PeerRatingRateNotification, ratesForRecord } from './store.js';
 import R from 'ramda';
 import { utils as telegramUtils } from '../../telegram.js';
-const { oneTimeKeyboard } = telegramUtils;
+const { oneTimeKeyboard, hideKeyboard } = telegramUtils;
 const winston = require('winston');
 import Promise from 'bluebird';
 
@@ -27,6 +27,9 @@ const msgToRecord = msg => {
 
 const NEXT_COMMAND = '/next';
 const CREATE_COMMAND = '/create';
+const START_COMMAND = '/start';
+
+const menuKb = oneTimeKeyboard([[MENU_COMMAND, CREATE_COMMAND, START_COMMAND]]);
 
 export default
 class PeerRating extends Route {
@@ -36,7 +39,10 @@ class PeerRating extends Route {
     }
   }
   welcome() {
-    return 'welcome to PeerRating bot.';
+    return {
+      layout: menuKb,
+      message: 'welcome to PeerRating bot.'
+    }
   }
   onEnter(ctx) {
     this.askForItem(ctx);
@@ -47,13 +53,13 @@ class PeerRating extends Route {
   }
   askForItem(ctx) {
     return this.setStep(ctx, WAIT_FOR_ITEM).then(() => {
-      this.sendMessage(ctx, 'Send your voice or text message to rate'); // and listen in on('message')
+      this.sendMessage(ctx, 'Send your voice or text message to rate', hideKeyboard()); // and listen in on('message')
     }).catch(winston.error);
   }
   askForRole(ctx) {
     this.sendMessage(ctx,
       `Send ${NEXT_COMMAND} for next item, ${CREATE_COMMAND} to add your own item or ${BACK_COMMAND} to exit`,
-    oneTimeKeyboard([[NEXT_COMMAND, CREATE_COMMAND, BACK_COMMAND]]));
+      oneTimeKeyboard([[NEXT_COMMAND, CREATE_COMMAND, BACK_COMMAND]]))
   }
   aspectReplyOpts(aspect) {
     return {
@@ -62,13 +68,12 @@ class PeerRating extends Route {
           callback_data: [String(r), aspect.name].join(':'), // be aware that a bad client can send arbitrary data in this field // TODO can also have record here to have a 'stale record' message
           text: String(r) // TODO texts like 'poor', 'good' etc,
         }))],
-        keyboard: [], // TODO common proxy to 'hide' previous kbs
-        hide_keyboard: true // mother of god
+        hide_keyboard: true
       }
     };
   }
   sendAspectToRate(ctx, aspect) {
-    return ctx.reply(aspect.description, this.aspectReplyOpts(aspect))
+    return this.sendMessage(ctx, aspect.description, this.aspectReplyOpts(aspect)).then
   }
   initNextRating(ctx) {
     const fromId = telegramUtils.getFromId(ctx);
@@ -158,7 +163,7 @@ class PeerRating extends Route {
       this.state.session = yield getSession(fromId);
       yield next;
     });
-    telegram.hears('/next', function * () {
+    telegram.hears(NEXT_COMMAND, function * () {
       const fromId = telegramUtils.getFromId(this);
       const { session } = this.state;
       if (session.step === START) {
@@ -169,8 +174,13 @@ class PeerRating extends Route {
         winston.error(`Wrong step for user ${fromId}, in initNextRating. ${session.step} instead of ${START}`);
       }
     });
-    telegram.hears('/create', function * () {
+    telegram.hears(CREATE_COMMAND, function * () {
       peerRating.askForItem(this);
+    });
+    telegram.hears(START_COMMAND, function * () {
+      peerRating.setStep(this, START).then(() => {
+        peerRating.sendWelcome(this);
+      });
     });
     telegram.on('message', function * (next) {
       const msg = this.message;
