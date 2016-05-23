@@ -1,9 +1,10 @@
-import { Route } from '../../router.js';
+import { Route, BACK_COMMAND } from '../../router.js';
 import { addRecord, popRecord, rateRecord, RATES, START, WAIT_FOR_ITEM, RATING,
   aspects, getSession, getSessionPromise,
   storeRateNotification, popRateNotifications, PeerRatingRateNotification, ratesForRecord } from './store.js';
 import R from 'ramda';
 import { utils as telegramUtils } from '../../telegram.js';
+const { oneTimeKeyboard } = telegramUtils;
 const winston = require('winston');
 import Promise from 'bluebird';
 
@@ -23,6 +24,9 @@ const msgToRecord = msg => {
   const type = messageType(msg);
   return { ...R.pick(recordTypes)(msg), fromId: msg.from.id, type };
 };
+
+const NEXT_COMMAND = '/next';
+const CREATE_COMMAND = '/create';
 
 export default
 class PeerRating extends Route {
@@ -47,16 +51,19 @@ class PeerRating extends Route {
     }).catch(winston.error);
   }
   askForRole(ctx) {
-    this.sendMessage(ctx, 'Send /next for next item, /create to add your own item or /back to exit');
+    this.sendMessage(ctx,
+      `Send ${NEXT_COMMAND} for next item, ${CREATE_COMMAND} to add your own item or ${BACK_COMMAND} to exit`,
+    oneTimeKeyboard([[NEXT_COMMAND, CREATE_COMMAND, BACK_COMMAND]]));
   }
   aspectReplyOpts(aspect) {
     return {
       reply_markup: {
         inline_keyboard: [RATES.map(r => ({
           callback_data: [String(r), aspect.name].join(':'), // be aware that a bad client can send arbitrary data in this field // TODO can also have record here to have a 'stale record' message
-          text: String(r), // TODO texts like 'poor', 'good' etc,
-          hide_keyboard: true
-        }))]
+          text: String(r) // TODO texts like 'poor', 'good' etc,
+        }))],
+        keyboard: [], // TODO common proxy to 'hide' previous kbs
+        hide_keyboard: true // mother of god
       }
     };
   }
@@ -105,7 +112,7 @@ class PeerRating extends Route {
   endRating(ctx) {
     return this.setStep(ctx, START).then(() => {
       const chatId = telegramUtils.getChatId(ctx);
-      return this.telegram.sendMessage(chatId, 'Rating done.')
+      return this.telegram.sendMessage(chatId, 'Rating done.').then(() => this.askForRole(ctx));
     }).catch(winston.error);
   }
   sendRateNotification(record, ratedById) {

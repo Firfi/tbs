@@ -42,6 +42,13 @@ export const utils = {
   getChatId(ctx) {
     const chat = this.getEvent(ctx).chat || this.getEvent(ctx).message.chat;
     return chat.id;
+  },
+  oneTimeKeyboard(kb) {
+    return {reply_markup: {
+      keyboard: kb,
+      force_reply: true,
+      one_time_keyboard: true
+    }};
   }
 };
 

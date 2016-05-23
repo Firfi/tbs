@@ -3,6 +3,7 @@
 const winston = require('winston');
 winston.level = 'debug';
 import { bot as telegram, utils as telegramUtils } from './telegram.js';
+const { oneTimeKeyboard } = telegramUtils;
 
 //export default class MainMenu {
 //  constructor() {
@@ -15,6 +16,10 @@ import { bot as telegram, utils as telegramUtils } from './telegram.js';
 //}
 
 export const ROOT = 'root';
+
+export const BACK_COMMAND = '/back';
+export const MENU_COMMAND = '/menu';
+export const START_COMMAND = '/start';
 
 const getBot = (route, root) => {
   // assumptions: bot is always instance of menu; menu always have items; items contains route part
@@ -87,15 +92,16 @@ export class Route {
         winston.debug('gotten bot:', this.state.bot.name);
         yield next;
       });
-      telegram.hears(/\/start/, function * () { // sic! not this.telegram
+      telegram.hears(START_COMMAND, function * () { // sic! not this.telegram
         this.state.done = true; // TODO
         _root.sendWelcome(this);
       });
-      telegram.hears(/\/menu/, function * () {
+      telegram.hears(MENU_COMMAND, function * () {
         this.state.done = true;
-        this.state.bot.sendWelcome(this);
+        this.session.route = [];
+        _root.sendWelcome(this);
       });
-      telegram.hears('/back', function * () {
+      telegram.hears(BACK_COMMAND, function * () {
         this.state.done = true;
         this.session.route.pop();
         const nextBot = getBot(this.session.route, _root);
@@ -106,17 +112,24 @@ export class Route {
   }
   sendWelcome(ctx) {
     const w = this.welcome && this.welcome(ctx) || ctx.session.route.join('/');
-    return this.sendMessage(ctx, w);
+    const args = typeof w === 'string' ? {
+      message: w
+    } : w;
+    return this.sendMessage(ctx, args.message, args.layout);
   }
-  sendMessage(ctx, message) {
+  sendMessage(ctx, message, layout) {
     const chatId = telegramUtils.getChatId(ctx);
-    return this.telegram.sendMessage(chatId, message).catch(winston.error.bind(winston));
+    return this.telegram.sendMessage(chatId, message, layout).catch(winston.error.bind(winston));
   }
 }
 
 export class Menu extends Route {
   welcome(ctx) {
-    return `${ctx.session.route.join('/')} Menu: \n${this.menuItems.map(item => `/go ${item.name}`)}`
+    const items = this.menuItems.map(item => [`/go_${item.name}`]);
+    return {
+      layout: oneTimeKeyboard(items),
+      message: `${ctx.session.route.join('/')} Menu: \n${items.join('\n')}`
+    }
   }
   constructor(name, items) {
     super(name);
@@ -124,7 +137,7 @@ export class Menu extends Route {
   }
   init(parent) {
     super.init(parent);
-    this.telegram.hears(/\/go (\w+)/, function * () {
+    this.telegram.hears(/\/go_(\w+)/, function * () {
       const next = this.match[1];
       const nextRoute = this.session.route.concat([next]);
       const nextBot = getBot(nextRoute, _root);
