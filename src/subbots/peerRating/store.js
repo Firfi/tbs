@@ -37,10 +37,15 @@ const Voice = new mongoose.Schema({
   file_id: String
 });
 
+const Video = new mongoose.Schema({
+  file_id: String
+});
+
 const PeerRatingItem = mongoose.model('PeerRatingItem', new mongoose.Schema({
   type: String,
   text: String,
   voice: Voice,
+  video: Video,
   fromId: Number,
   rated: Boolean,
   rates: [Rate]

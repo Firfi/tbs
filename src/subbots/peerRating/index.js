@@ -14,9 +14,10 @@ const roles = [RATE, CREATE];
 
 const VOICE = 'voice';
 const TEXT = 'text';
+const VIDEO = 'video';
 
 
-const recordTypes = [VOICE, TEXT];
+const recordTypes = [VOICE, TEXT, VIDEO];
 
 const messageType = msg => recordTypes.filter(t => !!msg[t])[0];
 
@@ -87,6 +88,9 @@ class PeerRating extends Route {
           const handlers = {
             [VOICE](record) {
               return ctx.replyWithVoice(record[VOICE].file_id, hideKeyboard());
+            },
+            [VIDEO](record) {
+              return ctx.replyWithVideo(record[VIDEO].file_id, hideKeyboard());
             },
             [TEXT](record) {
               return ctx.reply(record[TEXT], hideKeyboard());
