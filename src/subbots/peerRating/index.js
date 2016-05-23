@@ -86,10 +86,10 @@ class PeerRating extends Route {
 
           const handlers = {
             [VOICE](record) {
-              return ctx.replyWithVoice(record[VOICE].file_id);
+              return ctx.replyWithVoice(record[VOICE].file_id, hideKeyboard());
             },
             [TEXT](record) {
-              return ctx.reply(record[TEXT]);
+              return ctx.reply(record[TEXT], hideKeyboard());
             }
           };
           const handler = handlers[record.type];
