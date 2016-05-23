@@ -6,6 +6,7 @@ import R from 'ramda';
 import { utils as telegramUtils } from '../../telegram.js';
 const { oneTimeKeyboard, hideKeyboard } = telegramUtils;
 const winston = require('winston');
+const last = require('lodash/last');
 import Promise from 'bluebird';
 
 const RATE = 'rate';
@@ -15,9 +16,10 @@ const roles = [RATE, CREATE];
 const VOICE = 'voice';
 const TEXT = 'text';
 const VIDEO = 'video';
+const PHOTO = 'photo';
 
 
-const recordTypes = [VOICE, TEXT, VIDEO];
+const recordTypes = [VOICE, TEXT, VIDEO, PHOTO];
 
 const messageType = msg => recordTypes.filter(t => !!msg[t])[0];
 
@@ -31,6 +33,7 @@ const CREATE_COMMAND = '/create';
 const START_COMMAND = '/start';
 
 const menuKb = oneTimeKeyboard([[MENU_COMMAND], [CREATE_COMMAND], [START_COMMAND]]);
+const roleKeyboard = oneTimeKeyboard([[NEXT_COMMAND], [CREATE_COMMAND], [BACK_COMMAND]]);
 
 export default
 class PeerRating extends Route {
@@ -54,13 +57,15 @@ class PeerRating extends Route {
   }
   askForItem(ctx) {
     return this.setStep(ctx, WAIT_FOR_ITEM).then(() => {
-      this.sendMessage(ctx, 'Send your voice or text message to rate', hideKeyboard()); // and listen in on('message')
+      this.sendMessage(ctx, 'Send your voice, video, image or text message to rate', hideKeyboard()); // and listen in on('message')
     }).catch(winston.error);
   }
   askForRole(ctx) {
-    this.sendMessage(ctx,
+    this.sendMessage(
+      ctx,
       `Send ${NEXT_COMMAND} for next item, ${CREATE_COMMAND} to add your own item or ${BACK_COMMAND} to exit`,
-      oneTimeKeyboard([[NEXT_COMMAND], [CREATE_COMMAND], [BACK_COMMAND]]))
+      roleKeyboard
+    )
   }
   aspectReplyOpts(aspect) {
     return {
@@ -94,6 +99,9 @@ class PeerRating extends Route {
             },
             [TEXT](record) {
               return ctx.reply(record[TEXT], hideKeyboard());
+            },
+            [PHOTO](record) {
+              return ctx.replyWithPhoto(last(record[PHOTO]).file_id, hideKeyboard()); // [3] (LAST) seems to be the best one
             }
           };
           const handler = handlers[record.type];
@@ -192,7 +200,7 @@ class PeerRating extends Route {
       const { session } = this.state;
       if (session.step === WAIT_FOR_ITEM) {
         const type = messageType(msg);
-        if (!type) this.reply('unsupported message type');
+        if (!type) this.reply('unsupported message type', menuKb);
         else {
           addRecord(msgToRecord(msg))
             .then(() => peerRating.setStep(this, RATING))
@@ -218,7 +226,7 @@ class PeerRating extends Route {
           const nextAspect = aspects[R.findIndex(R.propEq('name', aspectName))(aspects) + 1];
           return Promise.all([
             telegram.editMessageText(chatId, messageId,
-              `${aspectName} rated: ${rateValue}\nnext: ${nextAspect ? nextAspect.description : 'done'}`) // TODO we can have all rates as well
+              `${aspectName} rated: ${rateValue}\nnext: ${nextAspect ? nextAspect.description : 'done!'}`) // TODO we can have all rates as well
               .then(() => this.answerCallbackQuery(`Aspect ${aspectName} rated!`))
               .then(() => nextAspect ?
                 telegram.editMessageReplyMarkup(chatId, messageId, peerRating.aspectReplyOpts(nextAspect).reply_markup) :

@@ -93,10 +93,6 @@ export class Route {
         winston.debug('gotten bot:', this.state.bot.name);
         yield next;
       });
-      telegram.hears(START_COMMAND, function * () { // sic! not this.telegram
-        this.state.done = true; // TODO
-        _root.sendWelcome(this);
-      });
       telegram.hears(MENU_COMMAND, function * () {
         this.state.done = true;
         this.session.route = [];

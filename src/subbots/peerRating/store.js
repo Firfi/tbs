@@ -33,12 +33,17 @@ const Rate = new mongoose.Schema({
   }
 }, {timestamps: true});
 
-const Voice = new mongoose.Schema({
+const mediaSchema = () => new mongoose.Schema({
   file_id: String
 });
 
-const Video = new mongoose.Schema({
-  file_id: String
+const Voice = mediaSchema();
+const Video = mediaSchema();
+const Photo = new mongoose.Schema({
+  file_id: String,
+  width: Number,
+  height: Number,
+  file_size: Number
 });
 
 const PeerRatingItem = mongoose.model('PeerRatingItem', new mongoose.Schema({
@@ -46,6 +51,7 @@ const PeerRatingItem = mongoose.model('PeerRatingItem', new mongoose.Schema({
   text: String,
   voice: Voice,
   video: Video,
+  photo: [Photo],
   fromId: Number,
   rated: Boolean,
   rates: [Rate]
