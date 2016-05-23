@@ -29,7 +29,7 @@ const NEXT_COMMAND = '/next';
 const CREATE_COMMAND = '/create';
 const START_COMMAND = '/start';
 
-const menuKb = oneTimeKeyboard([[MENU_COMMAND, CREATE_COMMAND, START_COMMAND]]);
+const menuKb = oneTimeKeyboard([[MENU_COMMAND], [CREATE_COMMAND], [START_COMMAND]]);
 
 export default
 class PeerRating extends Route {
@@ -59,7 +59,7 @@ class PeerRating extends Route {
   askForRole(ctx) {
     this.sendMessage(ctx,
       `Send ${NEXT_COMMAND} for next item, ${CREATE_COMMAND} to add your own item or ${BACK_COMMAND} to exit`,
-      oneTimeKeyboard([[NEXT_COMMAND, CREATE_COMMAND, BACK_COMMAND]]))
+      oneTimeKeyboard([[NEXT_COMMAND], [CREATE_COMMAND], [BACK_COMMAND]]))
   }
   aspectReplyOpts(aspect) {
     return {
