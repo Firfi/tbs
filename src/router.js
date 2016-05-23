@@ -138,11 +138,15 @@ export class Menu extends Route {
   }
   init(parent) {
     super.init(parent);
-    this.telegram.hears(/\/go_(\w+)/, function * () {
+    // we need it global for now
+    const route = this;
+    (this.name === ROOT ? telegram : this.telegram).hears(/\/go_(\w+)/, function * () {
+
       const next = this.match[1];
-      const nextRoute = this.session.route.concat([next]);
+      const nextRoute = route.name === ROOT ? [next] : this.session.route.concat([next]);
       const nextBot = getBot(nextRoute, _root);
       if (nextBot) {
+        this.state.done = true;
         this.session.route = nextRoute;
         nextBot.sendWelcome(this).then(() => {
           winston.debug(`would send on enter message: ${!!nextBot.onEnter}`);
