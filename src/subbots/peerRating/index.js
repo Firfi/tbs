@@ -191,12 +191,15 @@ class PeerRating extends Route {
     super(name);
   }
   runScript(ctx) {
-    scriptRunner(script1, ctx, this.telegram);
+    scriptRunner(this.script1, ctx);
   }
   init(parent) {
     super.init(parent);
     const telegram = this.telegram;
     const peerRating = this; // geez
+
+    this.script1 = script1(telegram);
+
     telegram.use(function * (next) {
       const fromId = telegramUtils.getFromId(this);
       this.state.session = yield getSession(fromId);
