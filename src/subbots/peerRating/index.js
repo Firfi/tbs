@@ -1,7 +1,9 @@
 import { Route, BACK_COMMAND, HELP_COMMAND, MENU_COMMAND } from '../../router.js';
-import { addRecord, popRecord, rateRecord, RATES, START, WAIT_FOR_ITEM, RATING,
+import { addRecord, popRecord, rateRecord, RATES, START, WAIT_FOR_ITEM, RATING, ONBOARDING, WAIT_FOR_NAME,
   aspects, getSession, getSessionPromise,
   storeRateNotification, popRateNotifications, PeerRatingRateNotification, ratesForRecord } from './store.js';
+import { script1 } from './script/script.js';
+import scriptRunner from './script/runner.js';
 import R from 'ramda';
 import { utils as telegramUtils } from '../../telegram.js';
 const { oneTimeKeyboard, hideKeyboard } = telegramUtils;
@@ -35,6 +37,7 @@ const START_COMMAND = '/start';
 const menuKb = oneTimeKeyboard([[MENU_COMMAND], [CREATE_COMMAND], [START_COMMAND]]);
 const roleKeyboard = oneTimeKeyboard([[NEXT_COMMAND], [CREATE_COMMAND], [BACK_COMMAND]]);
 
+
 export default
 class PeerRating extends Route {
   getInitialSession() {
@@ -49,7 +52,42 @@ class PeerRating extends Route {
     }
   }
   onEnter(ctx) {
-    this.askForItem(ctx);
+    // this.askForItem(ctx);
+  }
+  waitForName(ctx) {
+    console.warn('wait for name')
+    this.setStep(ctx, WAIT_FOR_NAME).then(() => {
+      console.warn('this.nameWaitingInitialised', this.nameWaitingInitialised)
+      if (!this.nameWaitingInitialised) {
+        const bot = this;
+        this.nameWaitingInitialised = true;
+        this.telegram.use(function * (next) {
+          console.warn('this.state.session.step', this.state.session.step);
+          if (this.state.session.step === WAIT_FOR_NAME) {
+            if (this.message && this.message.text) {
+              // TODO name validation? not a command?
+              this.state.session.userName = this.message.text;
+              return this.state.session.save()
+                .then(() => bot.sendMessage(ctx, 'Name saved'))
+                .then(() => bot.runScript(this));
+            } else {
+              return bot.sendMessage(ctx, 'Send me a name');
+            }
+          }
+
+          yield next;
+        });
+      }
+    }).catch(e => console.error(e));
+
+  }
+  onboarding(ctx) {
+    this.setStep(ctx, ONBOARDING).catch(e => console.error(e))
+      .then(() => this.sendMessage(ctx, 'Asking name here:'))
+      .then(() => this.waitForName(ctx));
+  }
+  firstTimeUser(ctx) {
+    return !ctx.state.session.userName; // TODO whole user? WHERE (global, local? why it askin it here)
   }
   setStep(ctx, step) {
     ctx.state.session.step = step;
@@ -152,29 +190,31 @@ class PeerRating extends Route {
   constructor(name) {
     super(name);
   }
+  runScript(ctx) {
+    scriptRunner(script1, ctx, this.telegram);
+  }
   init(parent) {
     super.init(parent);
     const telegram = this.telegram;
     const peerRating = this; // geez
-    //telegram.hears(/^\/start/, function * () { // TODO CHECK IF RUNNING
-    //  // TODO encapsulate, add PR or ask dev to improve it
-    //  const msg = this.message;
-    //  const chatId = msg.chat.id;
-    //
-    //  return telegram.sendMessage(chatId, `Choose a role`, {
-    //    reply_markup: {
-    //      keyboard: [roles.map(r => `/role ${r}`)],
-    //      force_reply: true,
-    //      hide_keyboard: true,
-    //      one_time_keyboard: true
-    //    }
-    //  })
-    //});
     telegram.use(function * (next) {
       const fromId = telegramUtils.getFromId(this);
       this.state.session = yield getSession(fromId);
       yield next;
     });
+    telegram.hears(START_COMMAND, function * () {
+      peerRating.setStep(this, START)
+        .then(() => peerRating.sendWelcome(this))
+        .then(() => {
+          if (peerRating.firstTimeUser(this)) {
+            peerRating.onboarding(this);
+          } else {
+            peerRating.runScript(this);
+          }
+        }).catch(e => console.error(e));
+    });
+
+    return;
     telegram.hears(NEXT_COMMAND, function * () {
       const fromId = telegramUtils.getFromId(this);
       const { session } = this.state;
@@ -189,11 +229,7 @@ class PeerRating extends Route {
     telegram.hears(CREATE_COMMAND, function * () {
       peerRating.askForItem(this);
     });
-    telegram.hears(START_COMMAND, function * () {
-      peerRating.setStep(this, START).then(() => {
-        peerRating.sendWelcome(this);
-      });
-    });
+
     telegram.on('message', function * (next) {
       const msg = this.message;
       const fromId = telegramUtils.getFromId(this);

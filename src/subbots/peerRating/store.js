@@ -18,8 +18,10 @@ export const RATES = R.range(MIN_RATE, MAX_RATE + 1);
 export const START = 'start';
 export const WAIT_FOR_ITEM = 'waitForItem'; // when we listen for user input with item to be rated
 export const RATING = 'rating'; // and implicit step RECORD_RATING when there's RATING and record to rate id involved
+export const ONBOARDING = 'onboarding';
+export const WAIT_FOR_NAME = 'waitForName';
 
-export const STEPS = [START, WAIT_FOR_ITEM, RATING];
+export const STEPS = [START, WAIT_FOR_ITEM, RATING, ONBOARDING, WAIT_FOR_NAME];
 
 const Rate = new mongoose.Schema({
   fromId: Number,
@@ -60,6 +62,7 @@ const PeerRatingItem = mongoose.model('PeerRatingItem', new mongoose.Schema({
 const PeerRatingSession = mongoose.model('PeerRatingSession', new mongoose.Schema({
   userId: Number,
   chatId: Number, // TODO
+  userName: String, // why not outside: peerRating askin for name, other bot askin for name.. now what?
   step: {
     type: String,
     'enum': STEPS
@@ -85,7 +88,8 @@ const PeerRatingRateNotification = mongoose.model('PeerRatingRateNotification', 
 
 export const getInitialSession = () => {
   return new PeerRatingSession({
-    step: START
+    step: START,
+    route: '/'
   });
 } ;
 
