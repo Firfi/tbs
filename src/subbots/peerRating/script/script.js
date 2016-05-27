@@ -34,5 +34,5 @@ export const script1 = (telegram) => {
     new Say({ what: 'q1', name: 'sayOne' }),
     new Input({ name: 'inputOne' })
     // inject a telegram responding/requesting API there but hide telegram itself and connect them with each other in line
-  ].map(c => c.withResponder(responder)).reduceRight((v, acc) => [[v.withNext(acc[1])].concat(acc[0]), v], [[], undefined]);
+  ]//.map(c => c.withResponder(responder)).reduceRight((v, acc) => [[v.withNext(acc[1])].concat(acc[0]), v], [[], undefined]);
 };
