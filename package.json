@@ -32,8 +32,10 @@
   },
   "dependencies": {
     "babel-runtime": "^6.6.1",
+    "composition": "^2.3.0",
     "eliza": "0.0.1-2",
     "hapi": "^13.3.0",
+    "koa-compose": "^2.4.0",
     "lodash": "^4.12.0",
     "machina": "^1.1.2",
     "mongoose": "^4.4.17",

@@ -27,12 +27,7 @@ const getBot = (route, root) => {
   return route.reduce((bot, part) => bot.menuItems.find(item => item.name === part), root);
 };
 
-
 let _root; // meh
-
-
-
-
 
 const mkTelegramFor = bot => {
 
@@ -93,22 +88,22 @@ export class Route {
         winston.debug('gotten bot:', this.state.bot.name);
         yield next;
       });
-      telegram.hears(MENU_COMMAND, function * () {
-        this.state.done = true;
-        this.session.route = [];
-        _root.sendWelcome(this);
-      });
-      telegram.hears(BACK_COMMAND, function * () {
-        this.state.done = true;
-        this.session.route.pop();
-        const nextBot = getBot(this.session.route, _root);
-        nextBot.sendWelcome(this);
-      });
-      telegram.hears(HELP_COMMAND, function * () {
-        this.state.done = true;
-        const helpMessage = (this.state.bot.help && this.state.bot.help()) || 'Generic help here';
-        this.state.bot.sendMessage(this, helpMessage);
-      });
+      //telegram.hears(MENU_COMMAND, function * () {
+      //  this.state.done = true;
+      //  this.session.route = [];
+      //  _root.sendWelcome(this);
+      //});
+      //telegram.hears(BACK_COMMAND, function * () {
+      //  this.state.done = true;
+      //  this.session.route.pop();
+      //  const nextBot = getBot(this.session.route, _root);
+      //  nextBot.sendWelcome(this);
+      //});
+      //telegram.hears(HELP_COMMAND, function * () {
+      //  this.state.done = true;
+      //  const helpMessage = (this.state.bot.help && this.state.bot.help()) || 'Generic help here';
+      //  this.state.bot.sendMessage(this, helpMessage);
+      //});
     }
   }
   sendWelcome(ctx) {

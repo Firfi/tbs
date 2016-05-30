@@ -1,12 +1,11 @@
 import eliza from './elizaParse.js';
 // import server from './server.js';
 import { webHookCallback as telegramWebHookCallback, isPolling } from './telegram.js';
-import TelegramQuiz from './subbots/telegramQuiz/index.js';
-import PeerRating from './subbots/peerRating/index.js';
-import RelayBot from './subbots/relay/index.js';
-import MainMenu from './subbots/mainMenu.js';
+import Router from './router2.js';
 const Promise = require('bluebird');
 const http = require('http');
+
+new Router();
 
 if (!isPolling) {
   const server = http.createServer(telegramWebHookCallback);
