@@ -38,53 +38,77 @@ export default class Router {
       yield next;
     });
   }
-  async route(ctx) {
-    return await this.getBot(ctx.session.route).handle(ctx);
+  async route(ctx, route) {
+    const controller = this.getController(route || ctx.session.route) || this.getController([]); // TODO restore from route error
+    return await controller.handle(ctx, route && !R.equals(route, ctx.session.route)/*bubble*/);
   }
-  getBot(route) {
-    return route.reduce((bot, part) => bot.children.find(item => item.name === part), mainMenu);
+  getController(route) {
+    return route.reduce((controller, part) => controller.children.find(item => item.name === part), mainMenu);
+  }
+  routeFor(controller) {
+    const _route = (c, res) => {
+      const { parent } = c;
+      if (!parent) return res;
+      else return _route(parent, [c.name, ...res]);
+    };
+    return _route(controller, []);
   }
 }
 
-export class Bot {
-  constructor(name) {
+export class Controller {
+  constructor(name, children=[]) {
     this.name = name;
+    this.children = children;
+    this.children.forEach(c => c.parent = this);
     this.handlers = [];
   }
-  addRegexHandler(regex, handler) {
-    this.handlers.push(async function(next) {
+  addRegexHandler(regex, handler, bubble) {
+    this.addHandler(async function(next) {
       const match = this.message && this.message.text && this.message.text.match(regex);
       if (match) {
         return await handler.bind(this)(match, next);
       } else {
         return next;
       };
+    }, bubble);
+  }
+  addHandler(handler, bubble) {
+    this.handlers.push({
+      handler, bubble
     });
   }
-  addHandler(handler) {
-    this.handlers.push(handler);
-  }
-  handle(ctx) {
-    const lastHandler = async function () {
-      console.warn('got last handler... pass above!');
+  handle(ctx, bubble) {
+    const controller = this;
+    const lastHandler = async function (next) {
+      const myRoute = this.router.routeFor(controller);
+      if (myRoute.length) {
+        await this.router.route(this, R.init(myRoute));
+      }
     }
-    return compose([...this.handlers, lastHandler]).call(ctx)
+    return compose(R.map(R.prop('handler'))([
+      ...this.handlers.filter(({handler, bubble: b}) => !bubble || (bubble && b)),
+      {handler: lastHandler}])).call(ctx)
   }
 }
 
-export class Menu extends Bot {
+export class Menu extends Controller {
   constructor(name, children) {
-    super(name);
-    this.children = children;
+    super(name, children);
+    const controller = this;
     this.addRegexHandler(/\/go_(.+)/, async function ([_, name], next) {
-      const c = R.find(R.propEq('name', name))(this.children);
+      const c = R.find(R.propEq('name', name))(controller.children);
       if (!c) {
         console.warn('TODO ERROR'); // or clear state and pass to parents
       } else {
-        this.session.route.push(name);
+        this.session.route = [...this.router.routeFor(controller), name];
+        await this.reply(`${this.session.route.join('/')} route chosen`);
         return next;
       }
-    });
+    }, true/* catch it in bubble from children */);
+    this.addRegexHandler(/\/start/, async function(_, next) {
+      this.session.route = this.router.routeFor(controller); // TODO setter in router
+      await this.reply(R.map(R.prop('name'))(controller.children).map(n => `go_${n}`).join('\n'));
+    }, true);
   }
 }
 
@@ -94,7 +118,7 @@ export class MainMenu extends Menu {
   }
 }
 
-class HelloBot extends Bot {
+class HelloBot extends Controller {
   constructor() {
     super('peers');
     this.addRegexHandler(/\/hi/, async function (_, next) {
@@ -102,17 +126,31 @@ class HelloBot extends Bot {
       return next;
     });
     this.addHandler(async function (next) {
-      return await this.reply('derp also');
-      // return next;
+      await this.reply('derp also');
+      return next;
     });
+    //this.addHandler(async function (next) {
+    //  await this.reply('this shouldnt be shown');
+    //  return next;
+    //});
+  }
+}
+
+class AppleBot extends Controller {
+  constructor() {
+    super('apples');
     this.addHandler(async function (next) {
-      return await this.reply('this shouldnt be shown');
-      // return next;
+      await this.reply('apples!');
+      return next;
     });
+    //this.addHandler(async function (next) {
+    //  await this.reply('this shouldnt be shown');
+    //  return next;
+    //});
   }
 }
 
 const mainMenu = new MainMenu(
-  [new HelloBot()]
+  [new HelloBot(), new AppleBot()]
 );
 
