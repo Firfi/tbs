@@ -1,7 +1,7 @@
 // convo object for states talking with router and user, i.e. changing sessions, sending responses.
 // formerly, context of conversation, presented more explicitly
 
-import { getConvo } from './convoSession.js';
+import { getConvo, lock, unlock } from './convoSession.js';
 
 export default class Convo {
 
@@ -17,6 +17,18 @@ export default class Convo {
   constructor(state, message) {
     this.state = state; // this.getGenericConvo(context);
     this.message = message; // this.getGenericMessage(context); // currentMessage
+  }
+
+  async lock() {
+    lock(this.state.id);
+  }
+
+  async unlock() {
+    unlock(this.state.id);
+  }
+
+  locked() {
+    return this.state.locked;
   }
 
 }

@@ -21,7 +21,7 @@ export default class Router {
     });
   }
   async route(convo) {
-    rootFsm.handle(convo.state, 'event', convo);
+    rootFsm.handle(convo.state, 'event', convo); // saving a state for async actions
   }
 }
 

@@ -1,6 +1,5 @@
 import { utils as telegramUtils } from '../telegram.js'
 import Convo from './convo';
-import { getConvo } from './convoSession.js';
 import { getByTelegramId as getUserByTelegramId } from '../model/user.js';
 import sender from '../sender/index.js';
 import { UserMessage, messageTypes } from '../chatModel/messages'

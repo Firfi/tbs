@@ -19,3 +19,11 @@ export async function getConvo(key) { // key is uid, uid:chatid, system:uid:chat
   }
   return convo;
 }
+
+export async function lock(key) {
+  return await Convo.findOneAndUpdate({id: key}, {$set: {locked: true}});
+};
+
+export async function unlock(key) {
+  return await Convo.findOneAndUpdate({id: key}, {$set: {locked: false}});
+};
