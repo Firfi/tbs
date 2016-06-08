@@ -29,9 +29,9 @@ export class TextReplyMessage extends ReplyMessage {
 }
 
 export class UserMessage extends Message {
-  constructor(type, content, userId, chatId) {
+  constructor(type, content, user, chatId) {
     super(type, content);
-    this.userId = userId;
+    this.user = user;
     this.chatId = chatId;
   }
 }

@@ -6,7 +6,7 @@ const { oneTimeKeyboard } = telegramUtils;
 import Promise from 'bluebird';
 // import compose from 'koa-compose';
 import R from 'ramda';
-import { TelegramConvo } from './convo.js';
+import TelegramConvo from './telegramConvo';
 import rootFsm from '../machines/rootFsm.js';
 
 const compose = require('composition');
@@ -15,13 +15,13 @@ export default class Router {
   constructor() {
     const router = this;
     telegram.use(function * (next) { // TODO Router also decides which system sent a message (telegram, facebook etc)
-      const convo = new TelegramConvo(this);
+      const convo = yield TelegramConvo.create(this);
       yield router.route(convo);
       yield next;
     });
   }
   async route(convo) {
-    rootFsm.handle(convo.state, convo);
+    rootFsm.handle(convo.state, 'event', convo);
   }
 }
 
@@ -54,7 +54,7 @@ export class Controller {
       if (myRoute.length) {
         await this.router.route(this, R.init(myRoute));
       }
-    }
+    };
     return compose(R.map(R.prop('handler'))([
       ...this.handlers.filter(({handler, bubble: b}) => !bubble || (bubble && b)),
       {handler: lastHandler}])).call(ctx)

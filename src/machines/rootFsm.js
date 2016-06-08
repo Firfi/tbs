@@ -10,9 +10,10 @@ export default new machina.BehavioralFsm({
 
   },
 
-  // '*'(client/*state*/, convo) { // todo 'message' to be more clear
-  //   this.handle(client, convo.message.type, convo);
-  // },
+  '*'(client/*state*/, action, convo) { // todo 'message' to be more clear
+    console.warn('root action...');
+    // this.handle(client, convo.message.type, convo);
+  },
 
   namespace: 'root',
 

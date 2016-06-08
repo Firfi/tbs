@@ -12,9 +12,14 @@ export default new machina.BehavioralFsm({
 
   states: {
     welcome: {
-      '*'(client, convo) {
-        console.warn('test');
-        convo.reply(new TextReplyMessage('hello world'));
+      _reset(client, convo) {},
+      async '*'(client, action_, convo) {
+        // convo.lock();
+        await new Promise((success) => {
+          setTimeout(success, 2000)
+        });
+        await convo.reply(new TextReplyMessage('hello world'));
+        // convo.unlock();
       }
     }
   }

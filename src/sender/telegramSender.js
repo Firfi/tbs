@@ -10,6 +10,6 @@ export default class TelegramSender extends Sender {
       [messageTypes.TEXT]: telegram.sendMessage,
       [messageTypes.PHOTO]: telegram.sendPhoto
     };
-    return handlers[msg.type](to, msg.content, opts);
+    return handlers[msg.type].bind(telegram)(to, msg.content, opts);
   }
 }
