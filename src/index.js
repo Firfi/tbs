@@ -1,7 +1,7 @@
 import eliza from './elizaParse.js';
 // import server from './server.js';
 import { webHookCallback as telegramWebHookCallback, isPolling } from './telegram.js';
-import Router from './router2.js';
+import Router from './router/router.js';
 const Promise = require('bluebird');
 const http = require('http');
 

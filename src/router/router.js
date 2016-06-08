@@ -1,57 +1,27 @@
 // import Route, { routes } from './subbots/router.js';
 const winston = require('winston');
 winston.level = 'debug';
-import { bot as telegram, utils as telegramUtils } from './telegram.js';
+import { bot as telegram, utils as telegramUtils } from '../telegram.js';
 const { oneTimeKeyboard } = telegramUtils;
 import Promise from 'bluebird';
 // import compose from 'koa-compose';
 import R from 'ramda';
+import { TelegramConvo } from './convo.js';
+import rootFsm from '../machines/rootFsm.js';
 
 const compose = require('composition');
-
-//function compose(middleware){
-//  console.warn('middleware')
-//  return function *(next){
-//    console.warn('function ababa')
-//    if (!next) next = noop();
-//
-//    var i = middleware.length;
-//
-//    while (i--) {
-//      next = middleware[i].call(this, next);
-//    }
-//
-//    return yield *next;
-//  }
-//}
-//
-//function *noop(){}
 
 export default class Router {
   constructor() {
     const router = this;
-    telegram.use(function * (next) { // fetch global route
-      // const fromId = (this.callbackQuery || this.message).from.id;
-      this.session.route = this.session.route || [];
-      this.router = router;
-      yield router.route(this);
+    telegram.use(function * (next) { // TODO Router also decides which system sent a message (telegram, facebook etc)
+      const convo = new TelegramConvo(this);
+      yield router.route(convo);
       yield next;
     });
   }
-  async route(ctx, route) {
-    const controller = this.getController(route || ctx.session.route) || this.getController([]); // TODO restore from route error
-    return await controller.handle(ctx, route && !R.equals(route, ctx.session.route)/*bubble*/);
-  }
-  getController(route) {
-    return route.reduce((controller, part) => controller.children.find(item => item.name === part), mainMenu);
-  }
-  routeFor(controller) {
-    const _route = (c, res) => {
-      const { parent } = c;
-      if (!parent) return res;
-      else return _route(parent, [c.name, ...res]);
-    };
-    return _route(controller, []);
+  async route(convo) {
+    rootFsm.handle(convo.state, convo);
   }
 }
 
@@ -150,7 +120,7 @@ class AppleBot extends Controller {
   }
 }
 
-const mainMenu = new MainMenu(
-  [new HelloBot(), new AppleBot()]
-);
+// const mainMenu = new MainMenu(
+//   [new HelloBot(), new AppleBot()]
+// );
 
