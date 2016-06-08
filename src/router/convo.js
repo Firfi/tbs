@@ -1,6 +1,8 @@
 // convo object for states talking with router and user, i.e. changing sessions, sending responses.
 // formerly, context of conversation, presented more explicitly
 
+import { getConvo } from './convoSession.js';
+
 export default class Convo {
 
   //
@@ -19,6 +21,10 @@ export default class Convo {
 
 }
 
+Convo.getConvoKey = function(context) {
+  throw new Error('not defined');
+};
+
 Convo.getGenericConvo = async function(context) {
-  console.warn('ggc', this);
+  return await getConvo(this.getConvoKey(context));
 };
