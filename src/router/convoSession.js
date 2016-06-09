@@ -1,4 +1,7 @@
+const clone = require('lodash/clone');
+
 const convoKey = key => `convo:${key}`;
+
 
 import redis from '../storage/redis.js';
 
@@ -18,9 +21,11 @@ export async function getConvo(key) { // key is uid, uid:chatid, system:uid:chat
   return convo;
 }
 
-export async function setConvo(key, convo) {
+export async function setConvo(key, state) {
+  state = clone(state);
+  delete state.convo;
   const redisKey = convoKey(key);
-  return await redis.setAsync(redisKey, JSON.stringify(convo));
+  return await redis.setAsync(redisKey, JSON.stringify(state));
 }
 
 async function setLock(key, lock) {

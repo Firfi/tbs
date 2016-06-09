@@ -1,5 +1,7 @@
 // generic message types declaration
 
+import { capitalizeFirstLetter } from '../utils/string';
+
 const VOICE = 'voice';
 const TEXT = 'text';
 const VIDEO = 'video';
@@ -13,6 +15,11 @@ class Message {
     if (allowedMessageTypes.indexOf(type) === -1) throw new Error(`Wrong message type: ${type}`);
     this.type = type;
     this.content = content; // i.e. this.text = content
+
+    allowedMessageTypes.forEach(t => {
+      this[`is${capitalizeFirstLetter(t)}`] = () => t === type;
+    });
+
   }
 }
 

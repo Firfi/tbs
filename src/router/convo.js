@@ -2,6 +2,7 @@
 // formerly, context of conversation, presented more explicitly
 
 import { getConvo, lock, unlock } from './convoSession.js';
+const clone = require('lodash/clone');
 
 export default class Convo {
 
@@ -15,7 +16,9 @@ export default class Convo {
   // }
 
   constructor(state, message) {
-    this.state = state; // this.getGenericConvo(context);
+
+    this.state = clone(state); // this.getGenericConvo(context);
+    this.state.convo = this;
     this.message = message; // this.getGenericMessage(context); // currentMessage
   }
 

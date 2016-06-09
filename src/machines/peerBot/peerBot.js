@@ -1,41 +1,41 @@
 import machina from 'machina';
-import { TextReplyMessage } from '../../chatModel/messages.js';
-import { unlock as unlockConvo } from '../../router/convoSession.js';
+import { TextReplyMessage } from '../../chatModel/messages';
+import globalCommands, { helloArgs } from './globalCommands';
+import { unlock as unlockConvo, setConvo } from '../../router/convoSession';
+const last = require('lodash/last');
+
+import createFlow from './createFlow.js';
 
 export default new machina.BehavioralFsm({
-  initialize(options) {
+  initialize(...args) {
   },
 
   namespace: 'peer',
 
   initialState: 'welcome',
 
-  states: {
+  states: Object.assign({
 
-    welcome: {
-      async _reset(client) {
-        if (client.sessionKey) unlockConvo(client.sessionKey);
+    welcome: globalCommands({
+      async _onEnter(client) {
+        await client.convo.reply(...helloArgs);
+        this.emit('handle.done', client.convo);
       },
-      async '*'(client, action_, convo) {
-        if (convo.locked()) return console.warn('locked yet!');
-        await convo.lock();
-        await new Promise((success) => {
-          setTimeout(success, 2000)
-        });
-        await convo.reply(new TextReplyMessage('hello world'));
-        await convo.unlock();
-        this.transition(client, 'derp');
-        this.emit('handle.done', convo);
+      async _reset(client) {
+        // if (client.sessionKey) unlockConvo(client.sessionKey);
       }
-    },
-    derp: {
-      async _reset(client) {},
-      async '*'(client, action_, convo) {
-        await convo.reply(new TextReplyMessage('derp'));
-        this.transition(client, 'welcome');
-        this.emit('handle.done', convo);
-      }
-    }
-  }
+      // async '*'(client, action_, convo) {
+      //   if (convo.locked()) return console.warn('locked yet!');
+      //   await convo.lock();
+      //   await new Promise((success) => {
+      //     setTimeout(success, 2000)
+      //   });
+      //   await convo.reply(new TextReplyMessage('hello world'));
+      //   await convo.unlock();
+      //   this.transition(client, 'derp');
+      //   this.emit('handle.done', convo);
+      // }
+    })
+  }, createFlow)
 
 });
