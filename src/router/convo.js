@@ -20,11 +20,11 @@ export default class Convo {
   }
 
   async lock() {
-    lock(this.state.id);
+    await lock(this.state.sessionKey);
   }
 
   async unlock() {
-    unlock(this.state.id);
+    await unlock(this.state.sessionKey);
   }
 
   locked() {
