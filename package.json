@@ -37,7 +37,7 @@
     "hapi": "^13.3.0",
     "koa-compose": "^2.4.0",
     "lodash": "^4.12.0",
-    "machina": "^1.1.2",
+    "machina": "2.0.0-1",
     "mongoose": "^4.4.17",
     "node-telegram-bot-api": "^0.21.1",
     "ramda": "^0.21.0",

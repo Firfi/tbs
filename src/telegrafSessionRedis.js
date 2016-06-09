@@ -11,7 +11,7 @@ export default function (opts) {
       if (event.message && event.message.chat) {
         chatId = event.message.chat.id
       }
-      return `${event.from.id}:v${chatId}`
+      return `${event.from.id}:${chatId}`
     },
     store: {}
   }, opts)

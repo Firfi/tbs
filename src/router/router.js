@@ -2,14 +2,15 @@
 const winston = require('winston');
 winston.level = 'debug';
 import { bot as telegram, utils as telegramUtils } from '../telegram.js';
-const { oneTimeKeyboard } = telegramUtils;
-import Promise from 'bluebird';
 // import compose from 'koa-compose';
 import R from 'ramda';
 import TelegramConvo from './telegramConvo';
 import rootFsm from '../machines/rootFsm.js';
+import { setConvo } from './convoSession';
+
 
 const compose = require('composition');
+const map = require('lodash/map');
 
 export default class Router {
   constructor() {
@@ -18,6 +19,12 @@ export default class Router {
       const convo = yield TelegramConvo.create(this);
       yield router.route(convo);
       yield next;
+    });
+    rootFsm.on('handle.done', async function(convo) {
+      map(convo.state.__machina__, (v) => {
+        v.currentActionArgs = [];
+      });
+      await setConvo(convo.state.sessionKey, convo.state);
     });
   }
   async route(convo) {

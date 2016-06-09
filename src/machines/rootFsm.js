@@ -11,7 +11,7 @@ export default new machina.BehavioralFsm({
   },
 
   '*'(client/*state*/, action, convo) { // todo 'message' to be more clear
-    console.warn('root action...');
+    console.warn('root action...', client);
     // this.handle(client, convo.message.type, convo);
   },
 
