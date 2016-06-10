@@ -27,7 +27,7 @@ export async function sendRateNotification(record, ratedByTelegramId) {
 export async function notifyAboutRate(record, ratedByTelegramId) {
   const sessionKey = TelegramConvo.makeKey(record.chatId, record.fromId);
   const session = await getConvo(sessionKey);
-  if (rootFsm.compositeState(session).endsWith('waitForRate')) { // TODO some lock, not this check
+  if (rootFsm.compositeState(session).endsWith('rateWIP')) { // TODO some lock, not this check
     return await storeRateNotification(record, ratedByTelegramId);
   } else {
     return await sendRateNotification(record, ratedByTelegramId);

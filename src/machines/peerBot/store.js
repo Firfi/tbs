@@ -120,6 +120,10 @@ const shouldMarkItemRated = (record, uid) => {
   return uniqAspectsForUser.length === aspects.length;
 };
 
+export const getRecord = (id) => {
+  return PeerRatingItem.findById(id);
+};
+
 export const rateRecord = (id, aspect, rate, telegramId) => { // TODO who rated?
   return PeerRatingItem.findById(id).then(record => {
     record.rates.push({

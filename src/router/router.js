@@ -20,6 +20,13 @@ export default class Router {
       yield router.route(convo);
       yield next;
     });
+    rootFsm.on('transition', async function(opts) {
+      const { convo } = opts.client;
+      map(convo.state.__machina__, (v) => {
+        v.currentActionArgs = [];
+      });
+      await setConvo(convo.state.sessionKey, convo.state);
+    });
     rootFsm.on('handle.done', async function(convo) {
       map(convo.state.__machina__, (v) => {
         v.currentActionArgs = [];
