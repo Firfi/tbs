@@ -2,6 +2,7 @@ const mapKeys = require('lodash/mapKeys');
 const winston = require('winston');
 import sender from '../../sender/index';
 import R from 'ramda';
+import { sendQueuedNotifications, notifyAboutRate } from './rateNotifier';
 
 import { addRecord, popRecord, rateRecord, aspects, getSession, getSessionPromise, RATES,
   storeRateNotification, popRateNotifications, PeerRatingRateNotification, ratesForRecord } from './store.js';
@@ -73,7 +74,6 @@ export default mapKeys({
     async '*'(client, action_, convo) {
       try {
         if (convo.message.isInlineKeyboard()) {
-          console.warn('convo, ',convo)
           const recordId = client.recordToRateId;
           const [rateString, aspectName] = convo.message.content.split(':');
           const rateValue = Number(rateString);
@@ -89,28 +89,11 @@ export default mapKeys({
             nextAspect && aspectReplyOpts(nextAspect)
           );
           if (!nextAspect) {
-              
+            await notifyAboutRate(record, fromId);
+            await sendQueuedNotifications(fromId);
+            this.transition('')
           }
 
-          return;
-          return Promise.all([
-            telegram.editMessageText(chatId, messageId,
-              `${aspectName} rated: ${rateValue}\nnext: ${nextAspect ? nextAspect.description : 'done!'}`) // TODO we can have all rates as well
-              .then(() => this.answerCallbackQuery(`Aspect ${aspectName} rated!`))
-              .then(() => nextAspect ?
-                peerRating.setStep(this, START).then(() => peerRating.askForRole(this))
-                  .then(() => {
-                    return popRateNotifications(fromId).then(notificationsWithRecords => {
-                      winston.debug(`got records/notifications for rate notifications from polling ${notificationsWithRecords.length}`);
-                      return Promise.all(notificationsWithRecords.map(({ record, notification }) => {
-                        return peerRating.sendRateNotification(record, notification.ratedById, fromId);
-                      }));
-                    });
-                  }) // poll waiting notifications logic here
-              ),
-            // and notify rated user // record.fromId
-            !nextAspect ? peerRating.notifyAboutRate(this, record) : Promise.resolve()
-          ]);
           // const record = genericMessageToRecord(convo.message);
           // await addRecord(record);
           // await convo.reply('Record added.');

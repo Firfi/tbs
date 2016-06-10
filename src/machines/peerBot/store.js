@@ -55,6 +55,7 @@ const PeerRatingItem = mongoose.model('PeerRatingItem', new mongoose.Schema({
   video: Video,
   photo: [Photo],
   fromId: Number,
+  chatId: Number,
   rated: Boolean,
   rates: [Rate]
 }, {timestamps: true}));

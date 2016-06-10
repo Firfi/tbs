@@ -6,7 +6,8 @@ import { addRecord, popRecord, rateRecord, aspects, getSession, getSessionPromis
 import globalCommands from './globalCommands';
 
 const genericMessageToRecord = genericMessage => {
-  return { [type]: genericMessage.content, fromId: genericMessage.user.telegramId, type: genericMessage.type };
+  const { type } = genericMessage;
+  return { [type]: genericMessage.content, fromId: genericMessage.user.telegramId, chatId: genericMessage.chatId, type };
 };
 
 export default mapKeys({

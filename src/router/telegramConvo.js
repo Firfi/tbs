@@ -54,8 +54,12 @@ TelegramConvo.getGenericMessage = async function(context) { // get 'inner api' m
 //   return await getConvo(`${telegramUtils.getChatId(context)}:${telegramUtils.getFromId(context)}`);
 // };
 
+TelegramConvo.makeKey = (chatId, userId) => {
+  return `${chatId}:${userId}`;
+};
+
 TelegramConvo.getConvoKey = (context) => {
-  return `${telegramUtils.getChatId(context)}:${telegramUtils.getFromId(context)}`;
+  return TelegramConvo.makeKey(telegramUtils.getChatId(context), telegramUtils.getFromId(context));
 };
 
 TelegramConvo.getGenericUser = async function(context) { // get 'inner api' user from telegram-specific user
