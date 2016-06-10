@@ -50,7 +50,6 @@ export default mapKeys({
         const record = await popRecord(client.convo.message.user.telegramId);
         winston.debug(`got next record for user ${telegramFromId}: ${JSON.stringify(record)}`);
         if (record) {
-          console.warn('record', record)
           const replyMessage = recordToReplyMessage(record);
           await client.convo.reply(replyMessage);
           const firstAspect = aspects[0];
@@ -91,14 +90,8 @@ export default mapKeys({
           if (!nextAspect) {
             await notifyAboutRate(record, fromId);
             await sendQueuedNotifications(fromId);
-            this.transition('')
-          }
-
-          // const record = genericMessageToRecord(convo.message);
-          // await addRecord(record);
-          // await convo.reply('Record added.');
-          // this.transition(client, 'welcome');
-          // this.emit('handle.done');
+            this.transition(client, 'welcome');
+          };
         }
 
       } catch(e) { // TODO generic error handling
