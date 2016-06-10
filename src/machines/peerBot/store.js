@@ -120,14 +120,14 @@ const shouldMarkItemRated = (record, uid) => {
   return uniqAspectsForUser.length === aspects.length;
 };
 
-export const rateRecord = (id, aspect, rate, uid) => { // TODO who rated?
+export const rateRecord = (id, aspect, rate, telegramId) => { // TODO who rated?
   return PeerRatingItem.findById(id).then(record => {
     record.rates.push({
-      fromId: uid,
+      fromId: telegramId,
       aspect,
       rate
     });
-    if (shouldMarkItemRated(record, uid)) {
+    if (shouldMarkItemRated(record, telegramId)) {
       record.rated = true;
     }
     return record.save();

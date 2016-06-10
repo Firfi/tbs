@@ -57,7 +57,7 @@ export default mapKeys({
           await sendAspectToRate(client.convo, firstAspect);
           this.emit('handle.done', client.convo); // TODO 1
         } else {
-          client.convo.reply('no records to rate');
+          await client.convo.reply('no records to rate');
           this.transition(client, 'welcome');
         }
       } catch (e) {
@@ -77,6 +77,7 @@ export default mapKeys({
           const [rateString, aspectName] = convo.message.content.split(':');
           const rateValue = Number(rateString);
           const fromId = convo.message.user.telegramId;
+          console.warn('convo.message.user, ', convo.message.user)
           const record = await rateRecord(recordId, aspectName, rateValue, fromId);
           if (aspects.map(a => a.name).indexOf(aspectName) === -1) throw new Error(`No such aspect: ${aspectName}`);
           const nextAspect = aspects[R.findIndex(R.propEq('name', aspectName))(aspects) + 1];
@@ -91,7 +92,7 @@ export default mapKeys({
             await notifyAboutRate(record, fromId);
             await sendQueuedNotifications(fromId);
             this.transition(client, 'welcome');
-          };
+          }
         }
 
       } catch(e) { // TODO generic error handling

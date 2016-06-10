@@ -2,7 +2,7 @@ import mongoose from './index.js';
 
 const UserSchema = mongoose.Schema({
   id: mongoose.Schema.Types.ObjectId, // unique ID in system in case we have multi-frontend. currently can be also telegram id
-  telegramId: String // can be stored in {providers: {telegram: ...}} as many people do but we can keep it simple
+  telegramId: Number // can be stored in {providers: {telegram: ...}} as many people do but we can keep it simple
 }, {
   timestamps: true
 });
