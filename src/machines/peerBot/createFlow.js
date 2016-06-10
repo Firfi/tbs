@@ -1,15 +1,12 @@
-import machina from 'machina';
-
 const mapKeys = require('lodash/mapKeys');
 
 import { addRecord, popRecord, rateRecord, aspects, getSession, getSessionPromise,
   storeRateNotification, popRateNotifications, PeerRatingRateNotification, ratesForRecord } from './store.js';
 
-import { isCommand } from '../../utils/chat';
-import globalCommands, { commandList } from './globalCommands';
+import globalCommands from './globalCommands';
 
 const genericMessageToRecord = genericMessage => {
-  return { content: genericMessage.content, fromId: genericMessage.user.telegramId, type: genericMessage.type };
+  return { [type]: genericMessage.content, fromId: genericMessage.user.telegramId, type: genericMessage.type };
 };
 
 export default mapKeys({

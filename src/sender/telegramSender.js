@@ -3,7 +3,7 @@ import { messageTypes, TextReplyMessage } from '../chatModel/messages.js';
 import Sender from './sender.js';
 
 export default class TelegramSender extends Sender {
-  reply(to, msg, opts) {
+  async reply(to, msg, opts) {
     if (typeof msg === 'string') {
       msg = new TextReplyMessage(msg, opts);
     }
@@ -13,6 +13,9 @@ export default class TelegramSender extends Sender {
       [messageTypes.TEXT]: telegram.sendMessage,
       [messageTypes.PHOTO]: telegram.sendPhoto
     };
-    return handlers[msg.type].bind(telegram)(to, msg.content, opts);
+    return await handlers[msg.type].bind(telegram)(to, msg.content, opts);
+  }
+  async editMessageText(chatId, msgId, text, opts) {
+    return await telegram.editMessageText(chatId, msgId, text, opts);
   }
 }

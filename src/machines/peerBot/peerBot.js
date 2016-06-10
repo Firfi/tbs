@@ -5,6 +5,7 @@ import { unlock as unlockConvo, setConvo } from '../../router/convoSession';
 const last = require('lodash/last');
 
 import createFlow from './createFlow.js';
+import rateFlow from './rateFlow.js';
 
 export default new machina.BehavioralFsm({
   initialize(...args) {
@@ -36,6 +37,6 @@ export default new machina.BehavioralFsm({
       //   this.emit('handle.done', convo);
       // }
     })
-  }, createFlow)
+  }, createFlow, rateFlow)
 
 });

@@ -22,6 +22,10 @@ const commandHandlers = {
   async [CREATE](client, convo) {
     this.transition(client, 'createFlow.init');
     this.emit('handle.done', convo);
+  },
+  async [RATE](client, convo) {
+    this.transition(client, 'rateFlow.init');
+    this.emit('handle.done', convo);
   }
 };
 

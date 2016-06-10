@@ -11,22 +11,43 @@ export default class TelegramConvo extends Convo { // fetch session from message
     return await sender.reply(this.message.chatId, replyMessage, opts);
   }
 
+  async editMessageText(text, options) {
+    return await sender.editMessageText(this.message.chatId, this.message.id, text, options);
+  }
+
 }
 
 TelegramConvo.getGenericMessage = async function(context) { // get 'inner api' message from telegram-specific message
   const msg = context.message;
-  const typeMap = { // telegram msg field -> generic message type
-    'text': messageTypes.TEXT,
-    'voice': messageTypes.VOICE,
-    'video': messageTypes.VIDEO,
-    'photo': messageTypes.PHOTO
+  const callbackQuery = context.callbackQuery;
+  const messageId = telegramUtils.getEvent(context).id;
+  const getTypeAndContentFromMessage = (msg) => {
+    const typeMap = { // telegram msg field -> generic message type
+      'text': messageTypes.TEXT,
+      'voice': messageTypes.VOICE,
+      'video': messageTypes.VIDEO,
+      'photo': messageTypes.PHOTO
+    };
+    const pair = toPairs(typeMap).find(p => msg[p[0]]);
+    if (!pair) throw new Error("Can't find valid message type for message:", msg);
+
+    const telegramType = pair[0];
+    const genericType = pair[1];
+    return [genericType, msg[telegramType]]
   };
-  const pair = toPairs(typeMap).find(p => msg[p[0]]);
-  if (!pair) throw new Error("Can't find valid message type for message:", msg);
-  const telegramType = pair[0];
-  const genericType = pair[1];
+  const [ type, content, replyMessage ] = msg ? getTypeAndContentFromMessage(msg) : await (async function() {
+    const [ replyToType, replyToContent ] = getTypeAndContentFromMessage(callbackQuery.message);
+    return [messageTypes.INLINE_KEYBOARD, callbackQuery.data, new UserMessage( // replyTo message
+      replyToType,
+      replyToContent,
+      await TelegramConvo.getGenericUser(callbackQuery),
+      telegramUtils.getChatId(callbackQuery),
+      callbackQuery.message.message_id
+    )];
+  })();
   const user = await TelegramConvo.getGenericUser(context);
-  return new UserMessage(genericType, msg[telegramType], user, msg.chat.id);
+  const chatId = telegramUtils.getChatId(context);
+  return new UserMessage(type, content, user, chatId, messageId).repliedTo(replyMessage);
 };
 
 // TelegramConvo.getGenericConvo = async function(context) { // get convo (current state machine client) from session
@@ -34,7 +55,7 @@ TelegramConvo.getGenericMessage = async function(context) { // get 'inner api' m
 // };
 
 TelegramConvo.getConvoKey = (context) => {
-  return `${telegramUtils.getChatId(context)}:${telegramUtils.getFromId(context)}`; 
+  return `${telegramUtils.getChatId(context)}:${telegramUtils.getFromId(context)}`;
 };
 
 TelegramConvo.getGenericUser = async function(context) { // get 'inner api' user from telegram-specific user

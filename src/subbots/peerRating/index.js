@@ -121,7 +121,6 @@ class PeerRating extends Route {
   }
   initNextRating(ctx) {
     const fromId = telegramUtils.getFromId(ctx);
-    const chatId = telegramUtils.getChatId(ctx);
     const { session } = ctx.state;
     if (session.step === RATING) {
       return popRecord(fromId).then(record => {
