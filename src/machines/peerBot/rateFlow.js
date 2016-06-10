@@ -1,6 +1,6 @@
 const mapKeys = require('lodash/mapKeys');
 const winston = require('winston');
-import sender from '../../sender/telegramSender';
+import sender from '../../sender/index';
 import R from 'ramda';
 
 import { addRecord, popRecord, rateRecord, aspects, getSession, getSessionPromise, RATES,
@@ -43,7 +43,6 @@ export default mapKeys({
   waitForRate: globalCommands({
     _reset() {},
     async _onEnter(client) {
-      console.warn('onEnter waitForRate');
       try {
         await client.convo.reply('Item to rate:');
         const telegramFromId = client.convo.message.user.telegramId;
@@ -74,21 +73,31 @@ export default mapKeys({
     async '*'(client, action_, convo) {
       try {
         if (convo.message.isInlineKeyboard()) {
+          console.warn('convo, ',convo)
           const recordId = client.recordToRateId;
-          const [rateString, aspectName] = convo.message.content.data.split(':');
+          const [rateString, aspectName] = convo.message.content.split(':');
           const rateValue = Number(rateString);
           const fromId = convo.message.user.telegramId;
           const record = await rateRecord(recordId, aspectName, rateValue, fromId);
           if (aspects.map(a => a.name).indexOf(aspectName) === -1) throw new Error(`No such aspect: ${aspectName}`);
           const nextAspect = aspects[R.findIndex(R.propEq('name', aspectName))(aspects) + 1];
-          await sender.editMessageText(convo.replyMessage.chatId);
+          // await sender.answerCallbackQuery(`Aspect ${aspectName} rated!`)) TODO notify() thing in sender
+          await sender.editMessageText(
+            convo.message.replyMessage.chatId,
+            convo.message.replyMessage.id,
+            `${aspectName} rated: ${rateValue}\nnext: ${nextAspect ? nextAspect.description : 'done!'}`,
+            nextAspect && aspectReplyOpts(nextAspect)
+          );
+          if (!nextAspect) {
+              
+          }
+
           return;
           return Promise.all([
             telegram.editMessageText(chatId, messageId,
               `${aspectName} rated: ${rateValue}\nnext: ${nextAspect ? nextAspect.description : 'done!'}`) // TODO we can have all rates as well
               .then(() => this.answerCallbackQuery(`Aspect ${aspectName} rated!`))
               .then(() => nextAspect ?
-                telegram.editMessageReplyMarkup(chatId, messageId, peerRating.aspectReplyOpts(nextAspect).reply_markup) :
                 peerRating.setStep(this, START).then(() => peerRating.askForRole(this))
                   .then(() => {
                     return popRateNotifications(fromId).then(notificationsWithRecords => {
