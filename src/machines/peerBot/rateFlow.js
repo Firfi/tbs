@@ -32,7 +32,7 @@ async function sendAspectToRate(convo, aspect) {
 }
 
 export default mapKeys({
-  init: {
+  init: { 
     async _onEnter(client) {
       this.transition(client, 'rateFlow.waitForRate');
     },
@@ -62,7 +62,9 @@ export default mapKeys({
         }
       } catch (e) {
         console.error(e);
-        throw new Error(e);
+        this.transition(client, 'welcome');
+        this.emit('handle.done', client.convo);
+        throw e;
       }
       // TODO set timeout to move back
     },
@@ -96,6 +98,9 @@ export default mapKeys({
 
       } catch(e) { // TODO generic error handling
         console.error(e);
+        this.transition(client, 'welcome');
+        this.emit('handle.done', client.convo);
+        throw e;
       }
 
     }

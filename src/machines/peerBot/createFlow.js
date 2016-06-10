@@ -32,10 +32,13 @@ export default mapKeys({
         const record = genericMessageToRecord(convo.message);
         await addRecord(record);
         await convo.reply('Record added.');
-        this.transition(client, 'welcome');
-        this.emit('handle.done');
+        this.transition(client, 'rateFlow.init');
+        this.emit('handle.done', client.convo);
       } catch(e) { // TODO generic error handling
         console.error(e);
+        this.transition(client, 'welcome');
+        this.emit('handle.done', client.convo);
+        throw e;
       }
 
     }
