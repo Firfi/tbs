@@ -2,6 +2,8 @@ import { bot as telegram } from '../telegram.js';
 import { messageTypes, TextReplyMessage } from '../chatModel/messages.js';
 import Sender from './sender.js';
 
+import R from 'ramda';
+
 export default class TelegramSender extends Sender {
   async reply(to, msg, opts) {
     if (typeof msg === 'string') {
@@ -13,7 +15,14 @@ export default class TelegramSender extends Sender {
       [messageTypes.TEXT]: telegram.sendMessage,
       [messageTypes.PHOTO]: telegram.sendPhoto
     };
-    return await handlers[msg.type].bind(telegram)(to, msg.content, opts);
+
+    const mappers = {
+      [messageTypes.VOICE]: R.prop('file_id'),
+      [messageTypes.VIDEO]: R.prop('file_id'),
+      [messageTypes.PHOTO]: R.pipe(R.last, R.prop('file_id'))
+    };
+
+    return await handlers[msg.type].bind(telegram)(to, (mappers[msg.type] || R.identity)(msg.content), opts);
   }
   async editMessageText(chatId, msgId, text, opts) {
     return await telegram.editMessageText(chatId, msgId, text, opts);

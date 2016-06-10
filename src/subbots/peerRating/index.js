@@ -55,14 +55,12 @@ class PeerRating extends Route {
     // this.askForItem(ctx);
   }
   waitForName(ctx) {
-    console.warn('wait for name')
     this.setStep(ctx, WAIT_FOR_NAME).then(() => {
       console.warn('this.nameWaitingInitialised', this.nameWaitingInitialised)
       if (!this.nameWaitingInitialised) {
         const bot = this;
         this.nameWaitingInitialised = true;
         this.telegram.use(function * (next) {
-          console.warn('this.state.session.step', this.state.session.step);
           if (this.state.session.step === WAIT_FOR_NAME) {
             if (this.message && this.message.text) {
               // TODO name validation? not a command?
