@@ -1,14 +1,14 @@
 const mapKeys = require('lodash/mapKeys');
 
 import { addRecord, popRecord, rateRecord, aspects, getSession, getSessionPromise,
-  storeRateNotification, popRateNotifications, PeerRatingRateNotification, ratesForRecord } from './store.js';
+  storeRateNotification, popRateNotifications, PeerRatingRateNotification, ratesForRecord } from '../../store.js';
 
-import globalCommands from './globalCommands';
+import globalCommands, { menuKb }  from '../../globalCommands';
 
-import { utils as telegramUtils } from '../../telegram';
+import { utils as telegramUtils } from '../../../../telegram';
 const { hideKeyboard } = telegramUtils;
 
-import { menuKb } from './globalCommands';
+import messages from './views/messages';
 
 const genericMessageToRecord = genericMessage => {
   const { type } = genericMessage;
@@ -18,7 +18,7 @@ const genericMessageToRecord = genericMessage => {
 export default mapKeys({
   init: {
     async _onEnter(client) {
-      await client.convo.reply('Add your item to rate'); // hideKeyboard(menuKb) we can't hide it and change at the same time
+      await client.convo.reply(messages.addYourItem); // hideKeyboard(menuKb) we can't hide it and change at the same time
       this.transition(client, 'createFlow.waitForInput');
     },
     async '*'(client, convo) {
@@ -36,7 +36,7 @@ export default mapKeys({
       try {
         const record = genericMessageToRecord(convo.message);
         await addRecord(record);
-        await convo.reply('Record added.');
+        await convo.reply(messages.recordAdded);
         this.transition(client, 'rateFlow.init');
         this.emit('handle.done', client.convo);
       } catch(e) { // TODO generic error handling

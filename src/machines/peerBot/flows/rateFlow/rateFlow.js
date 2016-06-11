@@ -1,24 +1,22 @@
 const mapKeys = require('lodash/mapKeys');
 const mapValues = require('lodash/mapValues');
 const winston = require('winston');
-import sender from '../../sender/index';
+import sender from '../../../../sender/index';
 import R from 'ramda';
 import { sendQueuedNotifications, notifyAboutRate } from './rateNotifier';
-import keyboards from './views/telegramKeyboards';
-const { rateFlow: rateFlowKeyboards } = keyboards;
+import keyboards from './views/keyboards';
 import postRateCommands from './postRateCommands';
-import { attachCommandHandlers } from '../utils/commands';
-import { utils as telegramUtils } from '../../telegram';
+import { attachCommandHandlers } from '../../../utils/commands';
+import { utils as telegramUtils } from '../../../../telegram';
 const { hideKeyboard } = telegramUtils;
-import { menuKb } from './globalCommands';
+import globalCommands, { menuKb } from '../../globalCommands';
+import messages from './views/messages';
 
 
 import { addRecord, popRecord, getRecord, rateRecord, aspects, getSession, getSessionPromise, RATES,
-  storeRateNotification, popRateNotifications, PeerRatingRateNotification, ratesForRecord } from './store.js';
+  storeRateNotification, popRateNotifications, PeerRatingRateNotification, ratesForRecord } from '../../store.js';
 
-import { ReplyMessage } from '../../chatModel/messages';
-
-import globalCommands from './globalCommands';
+import { ReplyMessage } from '../../../../chatModel/messages';
 
 const recordToReplyMessage = record => {
   return new ReplyMessage(record.type, record[record.type]);
@@ -70,7 +68,7 @@ export default mapValues(mapKeys({
 
   intro: {
     async _onEnter(client) {
-      await client.convo.reply('Item to rate: (intro text)');
+      await client.convo.reply(messages.itemToRate);
       this.transition(client, 'rateFlow.rateWIP');
       this.emit('handle.done', client.convo);
     }
@@ -90,7 +88,7 @@ export default mapValues(mapKeys({
         await sendAspectToRate(client.convo, firstAspect);
         this.emit('handle.done', client.convo); // TODO 1
       } else {
-        await client.convo.reply('no records to rate');
+        await client.convo.reply(messages.noRecordsToRate);
         this.transition(client, 'welcome');
       }
       // TODO set timeout to move back
@@ -116,7 +114,7 @@ export default mapValues(mapKeys({
             this.transition(client, 'rateFlow.outro');
           }
         } else {
-          await convo.reply('Please rate an item with inline keyboard');
+          await convo.reply(messages.rateWIPWrongEvent);
         }
 
 
@@ -131,7 +129,7 @@ export default mapValues(mapKeys({
   }),
   outro: {
     async _onEnter(client) {
-      await client.convo.reply('Outro text here...');
+      await client.convo.reply(messages.outro);
       this.transition(client, 'rateFlow.checkFeedback');
     }
   },
@@ -159,12 +157,12 @@ export default mapValues(mapKeys({
       this.transition(client, 'welcome');
     },
     async [postRateCommands.STATS](client, convo) {
-      const { keyboard } = rateFlowKeyboards.postRateMenu;
+      const { keyboard } = keyboards.postRateMenu;
       convo.reply('No stats state yet! todo.', keyboard);
     }
   })({
     async _onEnter(client) {
-      const { message, keyboard } = rateFlowKeyboards.postRateMenu;
+      const { message, keyboard } = keyboards.postRateMenu;
       await client.convo.reply(message, keyboard);
       // this.transition(client, 'welcome'); // TODO
     },

@@ -2,11 +2,12 @@ const Promise = require('bluebird');
 const R = require('ramda');
 const uniqueId = require('lodash/uniqueId');
 import mongoose from '../../model/index.js';
+import messages from './views/messages'
 
 export const aspects = [
-  {name: 'firstAspect', description: 'First aspect description'},
-  {name: 'secondAspect', description: 'Second aspect description'},
-  {name: 'thirdAspect', description: 'Third aspect description'}
+  {name: 'firstAspect', description: messages.firstAspect},
+  {name: 'secondAspect', description: messages.secondAspect},
+  {name: 'thirdAspect', description: messages.thirdAspect}
 ];
 
 const MIN_RATE = 1;

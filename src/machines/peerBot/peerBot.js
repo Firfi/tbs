@@ -4,8 +4,8 @@ import globalCommands, { helloArgs } from './globalCommands';
 import { unlock as unlockConvo, setConvo } from '../../router/convoSession';
 const last = require('lodash/last');
 
-import createFlow from './createFlow.js';
-import rateFlow from './rateFlow.js';
+import createFlow from './flows/createFlow/createFlow';
+import rateFlow from './flows/rateFlow/rateFlow';
 
 export default new machina.BehavioralFsm({
   initialize(...args) {
