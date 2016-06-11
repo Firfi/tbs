@@ -5,6 +5,11 @@ import { addRecord, popRecord, rateRecord, aspects, getSession, getSessionPromis
 
 import globalCommands from './globalCommands';
 
+import { utils as telegramUtils } from '../../telegram';
+const { hideKeyboard } = telegramUtils;
+
+import { menuKb } from './globalCommands';
+
 const genericMessageToRecord = genericMessage => {
   const { type } = genericMessage;
   return { [type]: genericMessage.content, fromId: genericMessage.user.telegramId, chatId: genericMessage.chatId, type };
@@ -13,6 +18,7 @@ const genericMessageToRecord = genericMessage => {
 export default mapKeys({
   init: {
     async _onEnter(client) {
+      await client.convo.reply('Add your item to rate'); // hideKeyboard(menuKb) we can't hide it and change at the same time
       this.transition(client, 'createFlow.waitForInput');
     },
     async '*'(client, convo) {
@@ -23,7 +29,6 @@ export default mapKeys({
   waitForInput: globalCommands({
     _reset() {},
     async _onEnter(client) {
-      await client.convo.reply('Add your item to rate');
       this.emit('handle.done', client.convo);
       // TODO set timeout to move back
     },

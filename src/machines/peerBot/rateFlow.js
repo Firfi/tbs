@@ -4,6 +4,14 @@ const winston = require('winston');
 import sender from '../../sender/index';
 import R from 'ramda';
 import { sendQueuedNotifications, notifyAboutRate } from './rateNotifier';
+import keyboards from './views/telegramKeyboards';
+const { rateFlow: rateFlowKeyboards } = keyboards;
+import postRateCommands from './postRateCommands';
+import { attachCommandHandlers } from '../utils/commands';
+import { utils as telegramUtils } from '../../telegram';
+const { hideKeyboard } = telegramUtils;
+import { menuKb } from './globalCommands';
+
 
 import { addRecord, popRecord, getRecord, rateRecord, aspects, getSession, getSessionPromise, RATES,
   storeRateNotification, popRateNotifications, PeerRatingRateNotification, ratesForRecord } from './store.js';
@@ -28,6 +36,8 @@ function aspectReplyOpts(aspect) {
   };
 }
 
+
+
 async function sendAspectToRate(convo, aspect) {
   await convo.reply(aspect.description, aspectReplyOpts(aspect));
 }
@@ -36,7 +46,6 @@ const onEnterFallback = state => {
   if (state._onEnter) {
     const f = state._onEnter;
     state._onEnter = async function(client) {
-      console.warn('wrapper stuff?')
       try {
         await f.bind(this)(client);
       } catch (e) {
@@ -75,7 +84,7 @@ export default mapValues(mapKeys({
       winston.debug(`got next record for user ${telegramFromId}: ${JSON.stringify(record)}`);
       if (record) {
         const replyMessage = recordToReplyMessage(record);
-        await client.convo.reply(replyMessage);
+        await client.convo.reply(replyMessage); // hideKeyboard because of client bug when it shows old hidden KB // we can't hide it and change at the same time
         const firstAspect = aspects[0];
         client.recordToRateId = record._id; // TODO 1
         await sendAspectToRate(client.convo, firstAspect);
@@ -133,10 +142,34 @@ export default mapValues(mapKeys({
       const record = await getRecord(recordId);
       await notifyAboutRate(record, fromId);
       await sendQueuedNotifications(fromId);
-      this.transition(client, 'welcome');
+      this.transition(client, 'rateFlow.postRateMenu');
     },
     _onExit(client) { // cleanup
       delete client.recordToRateId;
     }
-  }
+  },
+  postRateMenu: attachCommandHandlers({
+    async [postRateCommands.CREATE](client, convo) {
+      this.transition(client, 'createFlow.init');
+    },
+    async [postRateCommands.MORE_RATE](client, convo) {
+      this.transition(client, 'rateFlow.init');
+    },
+    async [postRateCommands.START](client, convo) {
+      this.transition(client, 'welcome');
+    },
+    async [postRateCommands.STATS](client, convo) {
+      const { keyboard } = rateFlowKeyboards.postRateMenu;
+      convo.reply('No stats state yet! todo.', keyboard);
+    }
+  })({
+    async _onEnter(client) {
+      const { message, keyboard } = rateFlowKeyboards.postRateMenu;
+      await client.convo.reply(message, keyboard);
+      // this.transition(client, 'welcome'); // TODO
+    },
+    async '*'(client, action_, convo) {
+      // this.transition(client, 'rateFlow.postRateMenu');
+    }
+  })
 }, (v, k) => `rateFlow.${k}`), (v) => onEnterFallback(v))
