@@ -7,8 +7,9 @@ const TEXT = 'text';
 const VIDEO = 'video';
 const PHOTO = 'photo';
 const INLINE_KEYBOARD = 'inlineKeyboard';
+const LOCATION = 'location';
 
-export const messageTypes = { VOICE, TEXT, VIDEO, PHOTO, INLINE_KEYBOARD };
+export const messageTypes = { VOICE, TEXT, VIDEO, PHOTO, INLINE_KEYBOARD, LOCATION };
 const allowedMessageTypes = Object.values(messageTypes);
 
 class Message { // TODO rename to 'event'

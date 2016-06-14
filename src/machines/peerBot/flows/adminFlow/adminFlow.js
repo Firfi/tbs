@@ -20,7 +20,7 @@ export default mapKeys({
         const { machina, client, convo } = ctx;
         const image = await getIntroImage();
         if (image) {
-          convo.reply(new TelegramPhotoReplyMessage(image.telegramId))
+          await convo.reply(new TelegramPhotoReplyMessage(image.telegramId))
         } else {
           await convo.reply('No intro image set');
         }

@@ -13,7 +13,8 @@ class DB {
   t(k) {
     const v = this.db[k];
     if (typeof v === 'undefined') {
-      throw new Error(`no such key ${k} in texts db`);
+      return k;
+      //throw new Error(`no such key ${k} in texts db`);
     }
     return v;
   }

@@ -26,7 +26,8 @@ TelegramConvo.getGenericMessage = async function(context) { // get 'inner api' m
       'text': messageTypes.TEXT,
       'voice': messageTypes.VOICE,
       'video': messageTypes.VIDEO,
-      'photo': messageTypes.PHOTO
+      'photo': messageTypes.PHOTO,
+      'location': messageTypes.LOCATION
     };
     const pair = toPairs(typeMap).find(p => msg[p[0]]);
     if (!pair) throw new Error("Can't find valid message type for message:", msg);

@@ -21,7 +21,7 @@ export default class TelegramSender extends Sender {
       [messageTypes.VIDEO]: R.prop('file_id'),
       [messageTypes.PHOTO]: R.pipe(R.last, R.prop('file_id'))
     };
-    
+
     try {
       return await handlers[msg.type].bind(telegram)(to, (mappers[msg.type] || R.identity)(msg.content), opts);
     } catch(e) {console.error(e)}

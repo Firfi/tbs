@@ -4,7 +4,8 @@ import t from '../views/messages';
 
 import { attachCommandHandlers } from '../utils/commands';
 
-export const START = '/start'; export const CREATE = '/create'; export const RATE = '/rate'; export const ADMIN = '/rosebud';
+export const START = '/start'; export const CREATE = '/create'; export const RATE = '/rate';
+export const ADMIN = '/rosebud'; export const ONBOARDING = '/onboarding';
 export const commandList = [START, CREATE, RATE];
 
 export const menuKb = oneTimeKeyboard([[START], [CREATE], [RATE]]);
@@ -28,6 +29,10 @@ export default attachCommandHandlers({
   async [RATE](ctx) {
     const { machina, client, convo } = ctx;
     machina.transition(client, 'rateFlow.init');
+  },
+  async [ONBOARDING](ctx) {
+    const { machina, client, convo } = ctx;
+    machina.transition(client, 'onboardingFlow.init');
   },
   async '/test'(ctx) {
     const { machina, client, convo } = ctx;
