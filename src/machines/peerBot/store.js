@@ -1,7 +1,7 @@
 const Promise = require('bluebird');
 const R = require('ramda');
 const uniqueId = require('lodash/uniqueId');
-import mongoose from '../../model/index.js';
+import mongoose from '../../storage/mongo';
 import messages from './views/messages'
 
 const aspectNames = [

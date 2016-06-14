@@ -1,4 +1,4 @@
-import mongoose from './index.js';
+import mongoose from '../storage/mongo';
 
 const UserSchema = mongoose.Schema({
   id: mongoose.Schema.Types.ObjectId, // unique ID in system in case we have multi-frontend. currently can be also telegram id

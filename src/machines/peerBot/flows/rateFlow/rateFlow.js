@@ -149,6 +149,11 @@ export default mapValues(mapKeys({
     }
   },
   postRateMenu: {
+    async _onEnter(client) {
+      const { message, keyboard } = keyboards().postRateMenu;
+      await client.convo.reply(message, keyboard);
+      // this.transition(client, 'welcome'); // TODO
+    },
     '*': wrap(attachCommandHandlers({
       async [postRateCommands.CREATE](ctx) {
         const { client, convo, machina } = ctx;
@@ -167,11 +172,6 @@ export default mapValues(mapKeys({
         const { keyboard } = keyboards().postRateMenu;
         convo.reply('No stats state yet! todo.', keyboard);
       }
-    })),
-    async _onEnter(client) {
-      const { message, keyboard } = keyboards().postRateMenu;
-      await client.convo.reply(message, keyboard);
-      // this.transition(client, 'welcome'); // TODO
-    }
+    }))
   }
 }, (v, k) => `rateFlow.${k}`), (v) => onEnterFallback(v))
