@@ -1,7 +1,6 @@
 const winston = require('winston');
 import Promise from 'bluebird';
-import { addRecord, popRecord, rateRecord, aspects, getSession, getSessionPromise, RATES,
-  storeRateNotification, popRateNotifications, PeerRatingRateNotification, ratesForRecord } from '../../store.js';
+import { storeRateNotification, popRateNotifications, ratesForRecord } from '../../store.js';
 import sender from '../../../../sender/index';
 import TelegramConvo from '../../../../router/telegramConvo';
 import { getConvo } from '../../../../router/convoSession';
@@ -21,7 +20,7 @@ export async function sendRateNotification(record, ratedByTelegramId) {
   winston.debug(`rates notification going for record ${record._id} and user ${record.fromId}`);
   const rates = ratesForRecord(record, ratedByTelegramId);
   return await sender.reply(record.fromId,
-    `${messages.notifier.rated} \n${rates.map(rate => `${rate.aspect}: ${rate.rate}`).join('\n')}`
+    `${messages().notifier.rated} \n${rates.map(rate => `${rate.aspect}: ${rate.rate}`).join('\n')}`
   );
 }
 

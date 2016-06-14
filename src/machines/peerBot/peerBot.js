@@ -8,8 +8,6 @@ import createFlow from './flows/createFlow/createFlow';
 import rateFlow from './flows/rateFlow/rateFlow';
 import testFlow from './flows/testFlow/testFlow';
 
-const compose = require('composition');
-
 import wrap from '../utils/compose';
 
 export default new machina.BehavioralFsm({
@@ -24,7 +22,7 @@ export default new machina.BehavioralFsm({
 
     welcome: {
       async _onEnter(client) {
-        await client.convo.reply(...helloArgs);
+        await client.convo.reply(...helloArgs());
         this.emit('handle.done', client.convo);
       },
       async _reset(client) {

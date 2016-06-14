@@ -5,9 +5,9 @@ import messages from './messages';
 
 import postRateCommands from '../postRateCommands';
 
-export default {
+export default () => ({
   postRateMenu: {
     keyboard: oneTimeKeyboard(Object.values(postRateCommands).map(c => [c])),
-    message: messages.postRateMenu
+    message: messages().postRateMenu
   }
-}
+})

@@ -4,10 +4,14 @@ const uniqueId = require('lodash/uniqueId');
 import mongoose from '../../model/index.js';
 import messages from './views/messages'
 
-export const aspects = [
-  {name: 'firstAspect', description: messages.firstAspect},
-  {name: 'secondAspect', description: messages.secondAspect},
-  {name: 'thirdAspect', description: messages.thirdAspect}
+const aspectNames = [
+  'firstAspect', 'secondAspect', 'thirdAspect'
+];
+
+export const aspects = () => [
+  {name: aspectNames[0], description: messages().firstAspect},
+  {name: aspectNames[1], description: messages().secondAspect},
+  {name: aspectNames[2], description: messages().thirdAspect}
 ];
 
 const MIN_RATE = 1;
@@ -28,7 +32,7 @@ const Rate = new mongoose.Schema({
   fromId: Number,
   aspect: {
     type: String,
-    'enum': R.map(R.prop('name'))(aspects)
+    'enum': aspectNames
   },
   rate: {
     type: Number,
@@ -118,7 +122,7 @@ const shouldMarkItemRated = (record, uid) => {
     R.map(R.prop('aspect')),
     R.uniq
   )(record.rates);
-  return uniqAspectsForUser.length === aspects.length;
+  return uniqAspectsForUser.length === aspectNames.length;
 };
 
 export const getRecord = (id) => {

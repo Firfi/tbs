@@ -1,6 +1,6 @@
 import t from '../../../../views/messages';
 
-export default {
+export default () => ({
   itemToRate: t('peer.rateFlow.intro.itemToRate'),
   outro: t('peer.rateFlow.outro'),
   noRecordsToRate: t('peer.rateFlow.rateWIP.noRecordsToRate'),
@@ -9,4 +9,4 @@ export default {
   notifier: {
     rated: t('peer.rateFlow.notifier.rated')
   }
-}
+})

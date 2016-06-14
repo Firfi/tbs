@@ -1,5 +1,6 @@
 import { utils as telegramUtils } from '../../telegram.js';
 const { oneTimeKeyboard, hideKeyboard } = telegramUtils;
+import t from '../views/messages';
 
 import { attachCommandHandlers } from '../utils/commands';
 
@@ -8,15 +9,14 @@ export const commandList = [START, CREATE, RATE];
 
 export const menuKb = oneTimeKeyboard([[START], [CREATE], [RATE]]);
 
-const helloMsg = 'Hello! Write /rate to get into rate mode and /create to get into create mode. Write /start to see this message again.';
-export const helloArgs = [helloMsg, menuKb];
+export const helloArgs = () => [t('hello'), menuKb];
 
 
 export default attachCommandHandlers({
   async [START](ctx) {
     const { machina, client, convo } = ctx;
     if (machina.compositeState(client) === 'welcome') {
-      await convo.reply(...helloArgs);
+      await convo.reply(...helloArgs());
     } else {
       machina.transition(client, 'welcome');
     }

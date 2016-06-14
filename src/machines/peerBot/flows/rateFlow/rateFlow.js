@@ -14,8 +14,7 @@ import wrap from '../../../utils/compose';
 import messages from './views/messages';
 
 
-import { addRecord, popRecord, getRecord, rateRecord, aspects, getSession, getSessionPromise, RATES,
-  storeRateNotification, popRateNotifications, PeerRatingRateNotification, ratesForRecord } from '../../store.js';
+import { popRecord, getRecord, rateRecord, aspects, RATES } from '../../store.js';
 
 import { ReplyMessage } from '../../../../chatModel/messages';
 
@@ -69,7 +68,7 @@ export default mapValues(mapKeys({
 
   intro: {
     async _onEnter(client) {
-      await client.convo.reply(messages.itemToRate);
+      await client.convo.reply(messages().itemToRate);
       this.transition(client, 'rateFlow.rateWIP');
       this.emit('handle.done', client.convo);
     }
@@ -84,12 +83,12 @@ export default mapValues(mapKeys({
       if (record) {
         const replyMessage = recordToReplyMessage(record);
         await client.convo.reply(replyMessage); // hideKeyboard because of client bug when it shows old hidden KB // we can't hide it and change at the same time
-        const firstAspect = aspects[0];
+        const firstAspect = aspects()[0];
         client.recordToRateId = record._id; // TODO 1
         await sendAspectToRate(client.convo, firstAspect);
         this.emit('handle.done', client.convo); // TODO 1
       } else {
-        await client.convo.reply(messages.noRecordsToRate);
+        await client.convo.reply(messages().noRecordsToRate);
         this.transition(client, 'welcome');
       }
       // TODO set timeout to move back
@@ -103,8 +102,9 @@ export default mapValues(mapKeys({
           const rateValue = Number(rateString);
           const fromId = convo.message.user.telegramId;
           await rateRecord(recordId, aspectName, rateValue, fromId);
-          if (aspects.map(a => a.name).indexOf(aspectName) === -1) throw new Error(`No such aspect: ${aspectName}`);
-          const nextAspect = aspects[R.findIndex(R.propEq('name', aspectName))(aspects) + 1];
+          const aspectsFetched = aspects();
+          if (aspectsFetched.map(a => a.name).indexOf(aspectName) === -1) throw new Error(`No such aspect: ${aspectName}`);
+          const nextAspect = aspectsFetched[R.findIndex(R.propEq('name', aspectName))(aspectsFetched) + 1];
           // await sender.answerCallbackQuery(`Aspect ${aspectName} rated!`)) TODO notify() thing in sender
           await sender.editMessageText(
             convo.message.replyMessage.chatId,
@@ -116,7 +116,7 @@ export default mapValues(mapKeys({
             machina.transition(client, 'rateFlow.outro');
           }
         } else {
-          await convo.reply(messages.rateWIPWrongEvent);
+          await convo.reply(messages().rateWIPWrongEvent);
         }
 
 
@@ -131,7 +131,7 @@ export default mapValues(mapKeys({
   },
   outro: {
     async _onEnter(client) {
-      await client.convo.reply(messages.outro);
+      await client.convo.reply(messages().outro);
       this.transition(client, 'rateFlow.checkFeedback');
     }
   },
@@ -164,12 +164,12 @@ export default mapValues(mapKeys({
       },
       async [postRateCommands.STATS](ctx) {
         const { client, convo, machina } = ctx;
-        const { keyboard } = keyboards.postRateMenu;
+        const { keyboard } = keyboards().postRateMenu;
         convo.reply('No stats state yet! todo.', keyboard);
       }
     })),
     async _onEnter(client) {
-      const { message, keyboard } = keyboards.postRateMenu;
+      const { message, keyboard } = keyboards().postRateMenu;
       await client.convo.reply(message, keyboard);
       // this.transition(client, 'welcome'); // TODO
     }

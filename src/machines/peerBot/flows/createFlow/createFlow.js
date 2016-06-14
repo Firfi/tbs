@@ -1,7 +1,6 @@
 const mapKeys = require('lodash/mapKeys');
 
-import { addRecord, popRecord, rateRecord, aspects, getSession, getSessionPromise,
-  storeRateNotification, popRateNotifications, PeerRatingRateNotification, ratesForRecord } from '../../store.js';
+import { addRecord } from '../../store.js';
 
 import wrap from '../../../utils/compose';
 
@@ -20,7 +19,7 @@ const genericMessageToRecord = genericMessage => {
 export default mapKeys({
   init: {
     async _onEnter(client) {
-      await client.convo.reply(messages.addYourItem); // hideKeyboard(menuKb) we can't hide it and change at the same time
+      await client.convo.reply(messages().addYourItem); // hideKeyboard(menuKb) we can't hide it and change at the same time
       this.transition(client, 'createFlow.waitForInput');
     },
     '*': wrap(async function (ctx) {
@@ -39,7 +38,7 @@ export default mapKeys({
       try {
         const record = genericMessageToRecord(convo.message);
         await addRecord(record);
-        await convo.reply(messages.recordAdded);
+        await convo.reply(messages().recordAdded);
         machina.transition(client, 'rateFlow.init');
       } catch(e) {
         console.error(e);
