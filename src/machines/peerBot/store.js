@@ -2,7 +2,8 @@ const Promise = require('bluebird');
 const R = require('ramda');
 const uniqueId = require('lodash/uniqueId');
 import mongoose from '../../storage/mongo';
-import messages from './views/messages'
+import messages from './views/messages';
+import File from '../../model/file';
 
 const aspectNames = [
   'firstAspect', 'secondAspect', 'thirdAspect'
@@ -169,3 +170,9 @@ export const popRateNotifications = uid => {
     }).then(result => notification.remove().then(_ => result)); // remove it right after getting
   })));
 };
+
+export const setIntroImage = async (telegramId) => {
+  return await File.findOneAndUpdate({ name: 'intro' }, { telegramId }, {upsert: true})
+};
+
+export const getIntroImage = async () => await File.findOne({ name: 'intro' });

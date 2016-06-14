@@ -7,6 +7,7 @@ const last = require('lodash/last');
 import createFlow from './flows/createFlow/createFlow';
 import rateFlow from './flows/rateFlow/rateFlow';
 import testFlow from './flows/testFlow/testFlow';
+import adminFlow from './flows/adminFlow/adminFlow';
 
 import wrap from '../utils/compose';
 
@@ -41,6 +42,6 @@ export default new machina.BehavioralFsm({
       //   this.emit('handle.done', convo);
       // }
     }
-  }, createFlow, rateFlow, testFlow)
+  }, createFlow, rateFlow, testFlow, adminFlow)
 
 });

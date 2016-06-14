@@ -33,7 +33,6 @@ export default mapKeys({
       // TODO set timeout to move back
     },
     '*': wrap([globalCommands, async function(ctx, next) {
-      console.warn('wwinput');
       const { client, convo, machina } = ctx;
       try {
         const record = genericMessageToRecord(convo.message);

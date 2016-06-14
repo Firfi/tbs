@@ -36,6 +36,12 @@ export class TextReplyMessage extends ReplyMessage {
   }
 }
 
+export class TelegramPhotoReplyMessage extends ReplyMessage {
+  constructor(file_id) {
+    super(messageTypes.PHOTO, [{file_id}]);
+  }
+}
+
 export class UserMessage extends Message {
   constructor(type, content, user, chatId, id) {
     super(type, content);
