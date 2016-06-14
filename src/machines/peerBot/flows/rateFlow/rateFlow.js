@@ -10,6 +10,7 @@ import { attachCommandHandlers } from '../../../utils/commands';
 import { utils as telegramUtils } from '../../../../telegram';
 const { hideKeyboard } = telegramUtils;
 import globalCommands, { menuKb } from '../../globalCommands';
+import wrap from '../../../utils/compose';
 import messages from './views/messages';
 
 
@@ -74,7 +75,7 @@ export default mapValues(mapKeys({
     }
   },
 
-  rateWIP: globalCommands({
+  rateWIP: {
     _reset() {},
     async _onEnter(client) {
       const telegramFromId = client.convo.message.user.telegramId;
@@ -93,7 +94,8 @@ export default mapValues(mapKeys({
       }
       // TODO set timeout to move back
     },
-    async '*'(client, action_, convo) {
+    '*': wrap(async function(ctx, next) {
+      const { convo, client, machina } = ctx;
       try {
         if (convo.message.isInlineKeyboard()) {
           const recordId = client.recordToRateId;
@@ -111,22 +113,22 @@ export default mapValues(mapKeys({
             nextAspect && aspectReplyOpts(nextAspect)
           );
           if (!nextAspect) {
-            this.transition(client, 'rateFlow.outro');
+            machina.transition(client, 'rateFlow.outro');
           }
         } else {
           await convo.reply(messages.rateWIPWrongEvent);
         }
 
 
-      } catch(e) { // TODO generic error handling
+      } catch(e) {
         console.error(e);
         this.transition(client, 'welcome');
         this.emit('handle.done', client.convo);
         throw e;
       }
 
-    }
-  }),
+    })
+  },
   outro: {
     async _onEnter(client) {
       await client.convo.reply(messages.outro);
@@ -146,28 +148,30 @@ export default mapValues(mapKeys({
       delete client.recordToRateId;
     }
   },
-  postRateMenu: attachCommandHandlers({
-    async [postRateCommands.CREATE](client, convo) {
-      this.transition(client, 'createFlow.init');
-    },
-    async [postRateCommands.MORE_RATE](client, convo) {
-      this.transition(client, 'rateFlow.init');
-    },
-    async [postRateCommands.START](client, convo) {
-      this.transition(client, 'welcome');
-    },
-    async [postRateCommands.STATS](client, convo) {
-      const { keyboard } = keyboards.postRateMenu;
-      convo.reply('No stats state yet! todo.', keyboard);
-    }
-  })({
+  postRateMenu: {
+    '*': wrap(attachCommandHandlers({
+      async [postRateCommands.CREATE](ctx) {
+        const { client, convo, machina } = ctx;
+        machina.transition(client, 'createFlow.init');
+      },
+      async [postRateCommands.MORE_RATE](ctx) {
+        const { client, convo, machina } = ctx;
+        machina.transition(client, 'rateFlow.init');
+      },
+      async [postRateCommands.START](ctx) {
+        const { client, convo, machina } = ctx;
+        machina.transition(client, 'welcome');
+      },
+      async [postRateCommands.STATS](ctx) {
+        const { client, convo, machina } = ctx;
+        const { keyboard } = keyboards.postRateMenu;
+        convo.reply('No stats state yet! todo.', keyboard);
+      }
+    })),
     async _onEnter(client) {
       const { message, keyboard } = keyboards.postRateMenu;
       await client.convo.reply(message, keyboard);
       // this.transition(client, 'welcome'); // TODO
-    },
-    async '*'(client, action_, convo) {
-      // this.transition(client, 'rateFlow.postRateMenu');
     }
-  })
+  }
 }, (v, k) => `rateFlow.${k}`), (v) => onEnterFallback(v))

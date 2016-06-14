@@ -6,6 +6,11 @@ const last = require('lodash/last');
 
 import createFlow from './flows/createFlow/createFlow';
 import rateFlow from './flows/rateFlow/rateFlow';
+import testFlow from './flows/testFlow/testFlow';
+
+const compose = require('composition');
+
+import wrap from '../utils/compose';
 
 export default new machina.BehavioralFsm({
   initialize(...args) {
@@ -17,14 +22,15 @@ export default new machina.BehavioralFsm({
 
   states: Object.assign({
 
-    welcome: globalCommands({
+    welcome: {
       async _onEnter(client) {
         await client.convo.reply(...helloArgs);
         this.emit('handle.done', client.convo);
       },
       async _reset(client) {
         // if (client.sessionKey) unlockConvo(client.sessionKey);
-      }
+      },
+      '*': wrap(globalCommands, () => {})
       // async '*'(client, action_, convo) {
       //   if (convo.locked()) return console.warn('locked yet!');
       //   await convo.lock();
@@ -36,7 +42,7 @@ export default new machina.BehavioralFsm({
       //   this.transition(client, 'derp');
       //   this.emit('handle.done', convo);
       // }
-    })
-  }, createFlow, rateFlow)
+    }
+  }, createFlow, rateFlow, testFlow)
 
 });

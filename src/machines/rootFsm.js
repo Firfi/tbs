@@ -10,11 +10,8 @@ export default new machina.BehavioralFsm({
 
   },
 
-  '*'(client/*state*/, action, convo) { // todo 'message' to be more clear
-    console.warn('root action...', client);
+  '*'(client/*state*/, action, convo) {
     this.transition(client, 'peer');
-    this.emit('handle.done', convo);
-    // this.handle(client, convo.message.type, convo);
   },
 
   namespace: 'root',
@@ -22,8 +19,14 @@ export default new machina.BehavioralFsm({
   initialState: 'peer',
 
   states: {
+    init: {
+      '*'(client, action_, convo) {
+        this.transition(client, 'peer');
+      }
+    },
     peer: {
-      _child: peerBot
+      _child: peerBot,
+      exit: 'init'
     }
   }
 

@@ -3,20 +3,14 @@ export function isCommand(str) {
 }
 
 export const attachCommandHandlers = (commandHandlers) => {
-  return (stateHandlersMap) => {
-    return Object.assign({}, stateHandlersMap, {
-      async '*'(client, action_, convo) {
-        const commandHandler = convo.message.isText() && isCommand(convo.message.content) &&
-          commandHandlers[convo.message.content];
-        if (commandHandler) {
-          const commandHandler = commandHandlers[convo.message.content];
-          await commandHandler.bind(this)(client, convo);
-        } else {
-          if (stateHandlersMap['*']) {
-            return await stateHandlersMap['*'].bind(this)(client, action_, convo);
-          }
-        }
-      }
-    }) ; 
+  return async function(ctx, next) {
+    const { convo } = ctx;
+    const commandHandler = convo.message.isText() && isCommand(convo.message.content) &&
+      commandHandlers[convo.message.content];
+    if (commandHandler) {
+      await commandHandler.bind(this)(ctx, next);
+    } else {
+      return await next();
+    }
   }
-}; 
+};

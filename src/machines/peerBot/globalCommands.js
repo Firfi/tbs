@@ -11,20 +11,26 @@ export const menuKb = oneTimeKeyboard([[START], [CREATE], [RATE]]);
 const helloMsg = 'Hello! Write /rate to get into rate mode and /create to get into create mode. Write /start to see this message again.';
 export const helloArgs = [helloMsg, menuKb];
 
-const commandHandlers = {
-  async [START](client, convo) {
-    if (this.compositeState(client) === 'welcome') {
+
+export default attachCommandHandlers({
+  async [START](ctx) {
+    const { machina, client, convo } = ctx;
+    if (machina.compositeState(client) === 'welcome') {
       await convo.reply(...helloArgs);
     } else {
-      this.transition(client, 'welcome');
+      machina.transition(client, 'welcome');
     }
   },
-  async [CREATE](client, convo) {
-    this.transition(client, 'createFlow.init');
+  async [CREATE](ctx) {
+    const { machina, client, convo } = ctx;
+    machina.transition(client, 'createFlow.init');
   },
-  async [RATE](client, convo) {
-    this.transition(client, 'rateFlow.init');
+  async [RATE](ctx) {
+    const { machina, client, convo } = ctx;
+    machina.transition(client, 'rateFlow.init');
+  },
+  async '/test'(ctx) {
+    const { machina, client, convo } = ctx;
+    machina.transition(client, 'testFlow.init');
   }
-};
-
-export default attachCommandHandlers(commandHandlers);
+});
