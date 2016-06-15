@@ -8,11 +8,11 @@ const toPairs = require('lodash/toPairs');
 export default class TelegramConvo extends Convo { // fetch session from message telegram-way
 
   async reply(replyMessage, opts) { // TODO in interface
-    return await sender.reply(this.message.chatId, replyMessage, opts);
+    return await sender.withSpeaker(this.speaker).reply(this.message.chatId, replyMessage, opts);
   }
 
   async editMessageText(text, options) {
-    return await sender.editMessageText(this.message.chatId, this.message.id, text, options);
+    return await sender.withSpeaker(this.speaker).editMessageText(this.message.chatId, this.message.id, text, options);
   }
 
 }

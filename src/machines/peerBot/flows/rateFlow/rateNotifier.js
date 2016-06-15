@@ -6,6 +6,7 @@ import TelegramConvo from '../../../../router/telegramConvo';
 import { getConvo } from '../../../../router/convoSession';
 import rootFsm from '../../../../machines/rootFsm.js';
 import messages from './views/messages';
+import speaker from '../../views/speaker';
 
 export async function sendQueuedNotifications(telegramId) {
   const notificationsWithRecords = await popRateNotifications(telegramId);
@@ -19,7 +20,8 @@ export async function sendRateNotification(record, ratedByTelegramId) {
   // TODO actually not uid but chat id but we don't store it for now. session ? also user could close chat.
   winston.debug(`rates notification going for record ${record._id} and user ${record.fromId}`);
   const rates = ratesForRecord(record, ratedByTelegramId);
-  return await sender.reply(record.fromId,
+  const _speaker = await speaker();
+  return await sender.withSpeaker(_speaker).reply(record.fromId,
     `${messages().notifier.rated} \n${rates.map(rate => `${rate.aspect}: ${rate.rate}`).join('\n')}`
   );
 }

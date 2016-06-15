@@ -115,7 +115,7 @@ export default mapValues(mapKeys({
         if (aspectsFetched.map(a => a.name).indexOf(aspectName) === -1) throw new Error(`No such aspect: ${aspectName}`);
         const nextAspect = aspectsFetched[R.findIndex(R.propEq('name', aspectName))(aspectsFetched) + 1];
         // await sender.answerCallbackQuery(`Aspect ${aspectName} rated!`)) TODO notify() thing in sender
-        await sender.editMessageText(
+        await sender.withSpeaker(convo.speaker).editMessageText(
           convo.message.replyMessage.chatId,
           convo.message.replyMessage.id,
           `${aspectName} rated: ${rateValue}\nnext: ${nextAspect ? nextAspect.description : 'done!'}`,

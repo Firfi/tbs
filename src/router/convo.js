@@ -3,6 +3,8 @@
 
 import { getConvo, lock, unlock } from './convoSession.js';
 const clone = require('lodash/clone');
+import rootFsm from '../machines/rootFsm.js';
+import { getSpeaker } from '../sender/speakerRegistry';
 
 export default class Convo {
 
@@ -18,6 +20,7 @@ export default class Convo {
   constructor(state, message) {
 
     this.state = clone(state); // this.getGenericConvo(context);
+    this.speaker = getSpeaker(rootFsm.compositeState(state));
     this.state.convo = this;
     this.message = message; // this.getGenericMessage(context); // currentMessage
   }

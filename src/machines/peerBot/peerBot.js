@@ -7,8 +7,16 @@ import rateFlow from './flows/rateFlow/rateFlow';
 import onboardingFlow from './flows/onboardingFlow/onboardingFlow';
 import testFlow from './flows/testFlow/testFlow';
 import adminFlow from './flows/adminFlow/adminFlow';
+import speaker from './views/speaker';
+import { addSpeaker } from '../../sender/speakerRegistry';
 
 import wrap from '../utils/compose';
+
+const NAMESPACE = 'peer';
+
+speaker().then(s => {
+  addSpeaker(NAMESPACE, s); // we know it's root here. TODO better way
+});
 
 const shouldRedirectToOnboarding = (user) => {
   return !(user.profile && user.profile.name && user.profile.location);
@@ -18,7 +26,7 @@ export default new machina.BehavioralFsm({
   initialize(...args) {
   },
 
-  namespace: 'peer',
+  namespace: NAMESPACE,
 
   initialState: 'welcome',
 
@@ -36,7 +44,6 @@ export default new machina.BehavioralFsm({
 
       },
       '*': wrap(globalCommands, async (ctx) => {
-        console.warn('any in welcome?')
         const { client, machina } = ctx;
         if (shouldRedirectToOnboarding(client.convo.message.user)) {
           machina.transition(client, 'onboardingFlow.init');
