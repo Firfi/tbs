@@ -17,10 +17,15 @@ export default class TelegramConvo extends Convo { // fetch session from message
 
 }
 
+TelegramConvo.getMessageId = context => {
+  const e = telegramUtils.getEvent(context);
+  return e.id || e.message_id; // message_id for outgoing
+};
+
 TelegramConvo.getGenericMessage = async function(context) { // get 'inner api' message from telegram-specific message
   const msg = context.message;
-  const callbackQuery = context.callbackQuery;
-  const messageId = telegramUtils.getEvent(context).id;
+
+  const messageId = TelegramConvo.getMessageId(context);
   const getTypeAndContentFromMessage = (msg) => {
     const typeMap = { // telegram msg field -> generic message type
       'text': messageTypes.TEXT,
@@ -37,13 +42,14 @@ TelegramConvo.getGenericMessage = async function(context) { // get 'inner api' m
     return [genericType, msg[telegramType]]
   };
   const [ type, content, replyMessage ] = msg ? getTypeAndContentFromMessage(msg) : await (async function() {
+    const { callbackQuery } = context;
     const [ replyToType, replyToContent ] = getTypeAndContentFromMessage(callbackQuery.message);
     return [messageTypes.INLINE_KEYBOARD, callbackQuery.data, new UserMessage( // replyTo message
       replyToType,
       replyToContent,
       await TelegramConvo.getGenericUser(callbackQuery),
       telegramUtils.getChatId(callbackQuery),
-      callbackQuery.message.message_id
+      TelegramConvo.getMessageId(callbackQuery)
     )];
   })();
   const user = await TelegramConvo.getGenericUser(context);

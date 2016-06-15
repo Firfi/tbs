@@ -37,7 +37,7 @@ function aspectReplyOpts(aspect) {
 
 
 async function sendAspectToRate(convo, aspect) {
-  await convo.reply(aspect.description, aspectReplyOpts(aspect));
+  return await convo.reply(aspect.description, aspectReplyOpts(aspect));
 }
 
 const onEnterFallback = state => {
@@ -75,7 +75,6 @@ export default mapValues(mapKeys({
   },
 
   rateWIP: {
-    _reset() {},
     async _onEnter(client) {
       const telegramFromId = client.convo.message.user.telegramId;
       const record = await popRecord(client.convo.message.user.telegramId);
@@ -85,48 +84,52 @@ export default mapValues(mapKeys({
         await client.convo.reply(replyMessage); // hideKeyboard because of client bug when it shows old hidden KB // we can't hide it and change at the same time
         const firstAspect = aspects()[0];
         client.recordToRateId = record._id; // TODO 1
-        await sendAspectToRate(client.convo, firstAspect);
+        client.sentRateMessageId = await sendAspectToRate(client.convo, firstAspect);
+        client.sentRateMessageChatId = client.convo.message.chatId;
         this.emit('handle.done', client.convo); // TODO 1
       } else {
         await client.convo.reply(messages().noRecordsToRate);
         this.transition(client, 'welcome');
       }
-      // TODO set timeout to move back
+    },
+    async _onExit(client) {
+      // cleanup a message
+      try {
+        if (!client.fullyRated) { // otherwise telegraf API will throw an error on this seemengly idempotent operation
+          console.warn('before cleanup')
+          await sender.editMessageReplyMarkup(client.sentRateMessageChatId, client.sentRateMessageId, {});
+          console.warn('after cleanup')
+        }
+        delete client.sentRateMessageId; delete client.sentRateMessageChatId; delete client.fullyRated;
+      } catch (e) {
+        console.error(e);
+      }
     },
     '*': wrap([globalCommands, async function(ctx, next) {
       const { convo, client, machina } = ctx;
-      try {
-        if (convo.message.isInlineKeyboard()) {
-          const recordId = client.recordToRateId;
-          const [rateString, aspectName] = convo.message.content.split(':');
-          const rateValue = Number(rateString);
-          const fromId = convo.message.user.telegramId;
-          await rateRecord(recordId, aspectName, rateValue, fromId);
-          const aspectsFetched = aspects();
-          if (aspectsFetched.map(a => a.name).indexOf(aspectName) === -1) throw new Error(`No such aspect: ${aspectName}`);
-          const nextAspect = aspectsFetched[R.findIndex(R.propEq('name', aspectName))(aspectsFetched) + 1];
-          // await sender.answerCallbackQuery(`Aspect ${aspectName} rated!`)) TODO notify() thing in sender
-          await sender.editMessageText(
-            convo.message.replyMessage.chatId,
-            convo.message.replyMessage.id,
-            `${aspectName} rated: ${rateValue}\nnext: ${nextAspect ? nextAspect.description : 'done!'}`,
-            nextAspect && aspectReplyOpts(nextAspect)
-          );
-          if (!nextAspect) {
-            machina.transition(client, 'rateFlow.outro');
-          }
-        } else {
-          await convo.reply(messages().rateWIPWrongEvent);
+      if (convo.message.isInlineKeyboard()) {
+        const recordId = client.recordToRateId;
+        const [rateString, aspectName] = convo.message.content.split(':');
+        const rateValue = Number(rateString);
+        const fromId = convo.message.user.telegramId;
+        await rateRecord(recordId, aspectName, rateValue, fromId);
+        const aspectsFetched = aspects();
+        if (aspectsFetched.map(a => a.name).indexOf(aspectName) === -1) throw new Error(`No such aspect: ${aspectName}`);
+        const nextAspect = aspectsFetched[R.findIndex(R.propEq('name', aspectName))(aspectsFetched) + 1];
+        // await sender.answerCallbackQuery(`Aspect ${aspectName} rated!`)) TODO notify() thing in sender
+        await sender.editMessageText(
+          convo.message.replyMessage.chatId,
+          convo.message.replyMessage.id,
+          `${aspectName} rated: ${rateValue}\nnext: ${nextAspect ? nextAspect.description : 'done!'}`,
+          nextAspect && aspectReplyOpts(nextAspect)
+        );
+        if (!nextAspect) {
+          client.fullyRated = true;
+          machina.transition(client, 'rateFlow.outro');
         }
-
-
-      } catch(e) {
-        console.error(e);
-        this.transition(client, 'welcome');
-        this.emit('handle.done', client.convo);
-        throw e;
+      } else {
+        await convo.reply(messages().rateWIPWrongEvent);
       }
-
     }])
   },
   outro: {

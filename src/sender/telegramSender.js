@@ -1,6 +1,7 @@
 import { bot as telegram } from '../telegram.js';
 import { messageTypes, TextReplyMessage } from '../chatModel/messages.js';
 import Sender from './sender.js';
+import TelegramConvo from '../router/telegramConvo';
 
 import R from 'ramda';
 
@@ -23,11 +24,16 @@ export default class TelegramSender extends Sender {
     };
 
     try {
-      return await handlers[msg.type].bind(telegram)(to, (mappers[msg.type] || R.identity)(msg.content), opts);
+      return TelegramConvo.getMessageId({
+        message: await handlers[msg.type].bind(telegram)(to, (mappers[msg.type] || R.identity)(msg.content), opts)
+      });
     } catch(e) {console.error(e)}
 
   }
   async editMessageText(chatId, msgId, text, opts) {
     return await telegram.editMessageText(chatId, msgId, text, opts);
+  }
+  async editMessageReplyMarkup(chatId, msgId, opts) {
+    return await telegram.editMessageReplyMarkup(chatId, msgId, opts);
   }
 }
