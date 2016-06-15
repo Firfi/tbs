@@ -1,5 +1,8 @@
 import mongoose from '../../storage/mongo';
 const get = require('lodash/get');
+const set = require('lodash/set');
+const toPairs = require('lodash/toPairs');
+const fromPairs = require('lodash/fromPairs');
 
 const MessagesSchema = new mongoose.Schema({
   data: mongoose.Schema.Types.Mixed
@@ -12,7 +15,7 @@ class DB {
     this.db = db;
   }
   t(k) {
-    const v = this.db[k];
+    const v = get(this.db, k);
     if (typeof v === 'undefined') {
       return k;
       //throw new Error(`no such key ${k} in texts db`);
@@ -31,7 +34,7 @@ export const init = async () => {
     if (!messages) {
       // init
       messages = new Messages({
-        data: JSON.stringify({
+        data: toPairs({
           'hello':
             'Hello! Write \n/rate to get into rate mode and \n/create to get into create mode. Write \n/start to see this message again.',
           'peer.rateFlow.postRateMenu.keyboard':
@@ -66,11 +69,11 @@ export const init = async () => {
             'Good',
           'peer.rate.5.displayName':
             'Very good'
-        })
+        }).reduce((acc, p) => {set(acc, p[0], p[1]); return acc;}, {})
       });
       await messages.save();
     }
-    db = new DB(JSON.parse(messages.data));
+    db = new DB(messages.data);
   } catch (e) {
     console.error(e);
   }
