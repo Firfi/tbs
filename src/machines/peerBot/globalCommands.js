@@ -5,6 +5,7 @@ import t from '../views/messages';
 import { attachCommandHandlers, humanizeCommandString } from '../utils/commands';
 
 export const START = '/start'; export const CREATE = '/create'; export const RATE = '/rate';
+export const MENU = '/menu'; export const HELP = '/help';
 export const ADMIN = '/rosebud'; export const ONBOARDING = '/onboarding';
 export const commandList = [START, CREATE, RATE];
 
@@ -13,6 +14,18 @@ export const menuKb = oneTimeKeyboard(commandList.map(humanizeCommandString).map
 export const helloArgs = () => [t('hello'), menuKb];
 
 const globalCommandHandlers = {
+  async [MENU](ctx) {
+    const { machina, client, convo } = ctx;
+    if (machina.compositeState(client) === 'welcome') {
+      await convo.reply(...helloArgs());
+    } else {
+      machina.transition(client, 'welcome');
+    }
+  },
+  async [HELP](ctx) {
+    const { machina, client, convo } = ctx;
+    await convo.reply(t('help'));
+  },
   async [START](ctx) {
     const { machina, client, convo } = ctx;
     if (machina.compositeState(client) === 'welcome') {
