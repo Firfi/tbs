@@ -66,7 +66,7 @@ export const init = async () => {
             'Good',
           'peer.rate.5.displayName':
             'Very good'
-        }, null, 2)
+        })
       });
       await messages.save();
     }
