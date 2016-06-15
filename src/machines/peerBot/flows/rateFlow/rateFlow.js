@@ -25,9 +25,9 @@ const recordToReplyMessage = record => {
 function aspectReplyOpts(aspect) {
   return {
     reply_markup: {
-      inline_keyboard: [RATES.map(r => ({
-        callback_data: [String(r), aspect.name].join(':'), // be aware that a bad client can send arbitrary data in this field // TODO can also have record here to have a 'stale record' message
-        text: String(r) // TODO texts like 'poor', 'good' etc,
+      inline_keyboard: [RATES().map(r => ({
+        callback_data: [String(r.rate), aspect.name].join(':'), // be aware that a bad client can send arbitrary data in this field // TODO can also have record here to have a 'stale record' message
+        text: r.displayName // TODO texts like 'poor', 'good' etc,
       }))],
       hide_keyboard: true
     }
@@ -93,7 +93,7 @@ export default mapValues(mapKeys({
       }
       // TODO set timeout to move back
     },
-    '*': wrap(async function(ctx, next) {
+    '*': wrap([globalCommands, async function(ctx, next) {
       const { convo, client, machina } = ctx;
       try {
         if (convo.message.isInlineKeyboard()) {
@@ -127,7 +127,7 @@ export default mapValues(mapKeys({
         throw e;
       }
 
-    })
+    }])
   },
   outro: {
     async _onEnter(client) {

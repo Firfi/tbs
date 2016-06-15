@@ -17,7 +17,13 @@ export const aspects = () => [
 
 const MIN_RATE = 1;
 const MAX_RATE = 5;
-export const RATES = R.range(MIN_RATE, MAX_RATE + 1);
+const ratesRange = R.range(MIN_RATE, MAX_RATE + 1);
+export const RATES = () => ratesRange.map(n => {
+  return {
+    rate: n,
+    displayName: messages().rateDisplayName(n)
+  }
+});
 
 // steps
 
@@ -37,7 +43,7 @@ const Rate = new mongoose.Schema({
   },
   rate: {
     type: Number,
-    'enum': RATES
+    'enum': ratesRange
   }
 }, {timestamps: true});
 

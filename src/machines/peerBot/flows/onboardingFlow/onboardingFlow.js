@@ -68,9 +68,6 @@ export default mapKeys({
       } else {
         await convo.reply(messages().pleaseProvideLocation);
       }
-      // await convo.reply(messages().waitForInput, oneTimeKeyboard([[{
-      //   text: messages().giveLocation, request_location: true
-      // }]]));
     }])
   }
 }, (v, k) => `onboardingFlow.${k}`)

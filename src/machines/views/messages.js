@@ -1,4 +1,5 @@
 import mongoose from '../../storage/mongo';
+const get = require('lodash/get');
 
 const MessagesSchema = new mongoose.Schema({
   data: mongoose.Schema.Types.Mixed
@@ -54,8 +55,18 @@ export const init = async () => {
           'peer.secondAspect':
             'Second aspect desc',
           'peer.thirdAspect':
-            'Third aspect desc'
-        })
+            'Third aspect desc',
+          'peer.rate.1.displayName':
+            'Very poor',
+          'peer.rate.2.displayName':
+            'Poor',
+          'peer.rate.3.displayName':
+            'Fair',
+          'peer.rate.4.displayName':
+            'Good',
+          'peer.rate.5.displayName':
+            'Very good'
+        }, null, 2)
       });
       await messages.save();
     }
