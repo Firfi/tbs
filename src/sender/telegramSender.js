@@ -2,11 +2,16 @@ import { bot as telegram } from '../telegram.js';
 import { messageTypes, TextReplyMessage } from '../chatModel/messages.js';
 import Sender from './sender.js';
 import TelegramConvo from '../router/telegramConvo';
+import Speaker from './speaker';
 
 import R from 'ramda';
 
+const addSpeakerPerson = speaker => {
+
+};
+
 export default class TelegramSender extends Sender {
-  async reply(to, msg, opts) {
+  async reply(to, msg, opts={}) {
     if (typeof msg === 'string') {
       msg = new TextReplyMessage(msg, opts);
     }
@@ -20,7 +25,8 @@ export default class TelegramSender extends Sender {
     const mappers = {
       [messageTypes.VOICE]: R.prop('file_id'),
       [messageTypes.VIDEO]: R.prop('file_id'),
-      [messageTypes.PHOTO]: R.pipe(R.last, R.prop('file_id'))
+      [messageTypes.PHOTO]: R.pipe(R.last, R.prop('file_id')),
+      [messageTypes.TEXT]: addSpeakerPerson(opts.speaker)
     };
 
     try {
