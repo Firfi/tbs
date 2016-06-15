@@ -1,0 +1,3 @@
+start - Main menu
+create - Create new item for rating
+rate - Fetch item for rating

@@ -2,18 +2,17 @@ import { utils as telegramUtils } from '../../telegram.js';
 const { oneTimeKeyboard, hideKeyboard } = telegramUtils;
 import t from '../views/messages';
 
-import { attachCommandHandlers } from '../utils/commands';
+import { attachCommandHandlers, humanizeCommandString } from '../utils/commands';
 
 export const START = '/start'; export const CREATE = '/create'; export const RATE = '/rate';
 export const ADMIN = '/rosebud'; export const ONBOARDING = '/onboarding';
 export const commandList = [START, CREATE, RATE];
 
-export const menuKb = oneTimeKeyboard([[START], [CREATE], [RATE]]);
+export const menuKb = oneTimeKeyboard(commandList.map(humanizeCommandString).map(c => [c]));
 
 export const helloArgs = () => [t('hello'), menuKb];
 
-
-export default attachCommandHandlers({
+const globalCommandHandlers = {
   async [START](ctx) {
     const { machina, client, convo } = ctx;
     if (machina.compositeState(client) === 'welcome') {
@@ -42,4 +41,6 @@ export default attachCommandHandlers({
     const { machina, client, convo } = ctx;
     machina.transition(client, 'adminFlow.init');
   }
-});
+};
+
+export default attachCommandHandlers(globalCommandHandlers);

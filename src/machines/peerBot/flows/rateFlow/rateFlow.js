@@ -95,10 +95,8 @@ export default mapValues(mapKeys({
     async _onExit(client) {
       // cleanup a message
       try {
-        if (!client.fullyRated) { // otherwise telegraf API will throw an error on this seemengly idempotent operation
-          console.warn('before cleanup')
+        if (!client.fullyRated && client.sentRateMessageId) { // otherwise telegraf API will throw an error on this seemengly idempotent operation
           await sender.editMessageReplyMarkup(client.sentRateMessageChatId, client.sentRateMessageId, {});
-          console.warn('after cleanup')
         }
         delete client.sentRateMessageId; delete client.sentRateMessageChatId; delete client.fullyRated;
       } catch (e) {
