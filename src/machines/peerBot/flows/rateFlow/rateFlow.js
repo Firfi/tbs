@@ -25,10 +25,10 @@ const recordToReplyMessage = record => {
 function aspectReplyOpts(aspect) {
   return {
     reply_markup: {
-      inline_keyboard: [RATES().map(r => ({
+      inline_keyboard: RATES().map(r => ([{
         callback_data: [String(r.rate), aspect.name].join(':'), // be aware that a bad client can send arbitrary data in this field // TODO can also have record here to have a 'stale record' message
         text: r.displayName // TODO texts like 'poor', 'good' etc,
-      }))],
+      }])),
       hide_keyboard: true
     }
   };
