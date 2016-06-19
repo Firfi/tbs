@@ -2,6 +2,7 @@ import t from '../../../../views/messages';
 
 export default () => ({
   itemToRate: t('peer.rateFlow.intro.itemToRate'),
+  ratingDone: t('peer.rateFlow.ratingDone'),
   outro: t('peer.rateFlow.outro'),
   noRecordsToRate: t('peer.rateFlow.rateWIP.noRecordsToRate'),
   postRateMenu: t('peer.rateFlow.postRateMenu.keyboard'),

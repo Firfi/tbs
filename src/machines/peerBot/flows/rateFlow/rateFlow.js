@@ -118,7 +118,7 @@ export default mapValues(mapKeys({
         await sender.withSpeaker(convo.speaker).editMessageText(
           convo.message.replyMessage.chatId,
           convo.message.replyMessage.id,
-          `${aspectName} rated: ${rateValue}\nnext: ${nextAspect ? nextAspect.description : 'done!'}`,
+          nextAspect ? `${aspectName} rated: ${rateValue}\nnext: ${nextAspect.description}` : messages().ratingDone,
           nextAspect && aspectReplyOpts(nextAspect)
         );
         if (!nextAspect) {
